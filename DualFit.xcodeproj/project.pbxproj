@@ -14,7 +14,7 @@
 		D0000005 /* ChallengeExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000105 /* ChallengeExercise.swift */; };
 		D0000006 /* ChallengeParticipant.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000106 /* ChallengeParticipant.swift */; };
 		D0000007 /* ExerciseSubmission.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000107 /* ExerciseSubmission.swift */; };
-		D0000008 /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000108 /* CloudKitManager.swift */; };
+		D0000008 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000108 /* AuthService.swift */; };
 		D0000009 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000109 /* UserService.swift */; };
 		D0000010 /* ChallengeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000110 /* ChallengeService.swift */; };
 		D0000011 /* SubmissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000111 /* SubmissionService.swift */; };
@@ -50,7 +50,7 @@
 		D0000105 /* ChallengeExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeExercise.swift; sourceTree = "<group>"; };
 		D0000106 /* ChallengeParticipant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeParticipant.swift; sourceTree = "<group>"; };
 		D0000107 /* ExerciseSubmission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseSubmission.swift; sourceTree = "<group>"; };
-		D0000108 /* CloudKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitManager.swift; sourceTree = "<group>"; };
+		D0000108 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		D0000109 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
 		D0000110 /* ChallengeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeService.swift; sourceTree = "<group>"; };
 		D0000111 /* SubmissionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmissionService.swift; sourceTree = "<group>"; };
@@ -137,7 +137,7 @@
 		D0000304 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				D0000108 /* CloudKitManager.swift */,
+				D0000108 /* AuthService.swift */,
 				D0000109 /* UserService.swift */,
 				D0000110 /* ChallengeService.swift */,
 				D0000111 /* SubmissionService.swift */,

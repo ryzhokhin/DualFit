@@ -6,23 +6,24 @@
 //
 
 import Foundation
-import CloudKit
+import FirebaseFirestore
 
-/// CloudKit record type name for ChallengeParticipant
-let ChallengeParticipantRecordType = "ChallengeParticipant"
+/// Firestore subcollection name for participants
+let ParticipantsSubcollection = "participants"
 
 /// Represents a user's participation in a challenge
-struct ChallengeParticipant: Identifiable, Equatable, Hashable {
-    let id: String                    // CloudKit record name
-    let challengeRef: String          // Reference to Challenge record ID
-    let userRef: String               // Reference to AppUser record ID
+struct ChallengeParticipant: Identifiable, Equatable, Hashable, Codable {
+    let id: String                    // Firestore document ID
+    let challengeId: String           // Parent challenge ID
+    let userId: String                // User ID who joined
     let joinedAt: Date
     
-    // MARK: - CloudKit Field Keys
+    // MARK: - Coding Keys
     
-    enum FieldKey: String {
-        case challengeRef
-        case userRef
+    enum CodingKeys: String, CodingKey {
+        case id
+        case challengeId
+        case userId
         case joinedAt
     }
     
@@ -30,56 +31,41 @@ struct ChallengeParticipant: Identifiable, Equatable, Hashable {
     
     init(
         id: String = UUID().uuidString,
-        challengeRef: String,
-        userRef: String,
+        challengeId: String,
+        userId: String,
         joinedAt: Date = Date()
     ) {
         self.id = id
-        self.challengeRef = challengeRef
-        self.userRef = userRef
+        self.challengeId = challengeId
+        self.userId = userId
         self.joinedAt = joinedAt
     }
     
-    // MARK: - CloudKit Conversion
+    // MARK: - Firestore Conversion
     
-    /// Initialize from a CloudKit record
-    init?(from record: CKRecord) {
-        guard record.recordType == ChallengeParticipantRecordType else { return nil }
-        
-        self.id = record.recordID.recordName
-        
-        // Handle challenge reference
-        if let ref = record[FieldKey.challengeRef.rawValue] as? CKRecord.Reference {
-            self.challengeRef = ref.recordID.recordName
-        } else {
-            self.challengeRef = ""
-        }
-        
-        // Handle user reference
-        if let ref = record[FieldKey.userRef.rawValue] as? CKRecord.Reference {
-            self.userRef = ref.recordID.recordName
-        } else {
-            self.userRef = ""
-        }
-        
-        self.joinedAt = record[FieldKey.joinedAt.rawValue] as? Date ?? record.creationDate ?? Date()
+    /// Convert to Firestore data dictionary
+    func toFirestore() -> [String: Any] {
+        return [
+            "id": id,
+            "challengeId": challengeId,
+            "userId": userId,
+            "joinedAt": Timestamp(date: joinedAt)
+        ]
     }
     
-    /// Convert to a CloudKit record
-    func toRecord() -> CKRecord {
-        let recordID = CKRecord.ID(recordName: id)
-        let record = CKRecord(recordType: ChallengeParticipantRecordType, recordID: recordID)
+    /// Initialize from Firestore document
+    init?(from document: DocumentSnapshot, challengeId: String) {
+        guard let data = document.data() else { return nil }
         
-        // Create references
-        let challengeRecordID = CKRecord.ID(recordName: challengeRef)
-        record[FieldKey.challengeRef.rawValue] = CKRecord.Reference(recordID: challengeRecordID, action: .deleteSelf)
+        self.id = document.documentID
+        self.challengeId = challengeId
+        self.userId = data["userId"] as? String ?? ""
         
-        let userRecordID = CKRecord.ID(recordName: userRef)
-        record[FieldKey.userRef.rawValue] = CKRecord.Reference(recordID: userRecordID, action: .none)
-        
-        record[FieldKey.joinedAt.rawValue] = joinedAt
-        
-        return record
+        if let timestamp = data["joinedAt"] as? Timestamp {
+            self.joinedAt = timestamp.dateValue()
+        } else {
+            self.joinedAt = Date()
+        }
     }
 }
 
@@ -87,8 +73,7 @@ struct ChallengeParticipant: Identifiable, Equatable, Hashable {
 
 extension ChallengeParticipant {
     static let sample = ChallengeParticipant(
-        challengeRef: Challenge.sample.id,
-        userRef: AppUser.sample.id
+        challengeId: Challenge.sample.id,
+        userId: AppUser.sample.id
     )
 }
-

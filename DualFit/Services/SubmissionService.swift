@@ -2,19 +2,23 @@
 //  SubmissionService.swift
 //  DualFit
 //
-//  Handles exercise submission operations.
+//  Handles exercise submission Firestore and Storage operations.
 //
 
 import Foundation
-import CloudKit
+import FirebaseFirestore
+import FirebaseStorage
 
 /// Errors specific to submission operations
 enum SubmissionError: LocalizedError {
     case submissionNotFound
     case alreadySubmitted
     case cannotReviewOwnSubmission
-    case videoUploadFailed
+    case videoUploadFailed(Error)
     case invalidVideoFile
+    case saveFailed(Error)
+    case fetchFailed(Error)
+    case deleteFailed(Error)
     
     var errorDescription: String? {
         switch self {
@@ -24,10 +28,16 @@ enum SubmissionError: LocalizedError {
             return "You have already submitted for this exercise today."
         case .cannotReviewOwnSubmission:
             return "You cannot review your own submission."
-        case .videoUploadFailed:
-            return "Failed to upload video. Please try again."
+        case .videoUploadFailed(let error):
+            return "Failed to upload video: \(error.localizedDescription)"
         case .invalidVideoFile:
             return "Invalid video file. Please select a different video."
+        case .saveFailed(let error):
+            return "Failed to save: \(error.localizedDescription)"
+        case .fetchFailed(let error):
+            return "Failed to fetch: \(error.localizedDescription)"
+        case .deleteFailed(let error):
+            return "Failed to delete: \(error.localizedDescription)"
         }
     }
 }
@@ -68,34 +78,95 @@ struct DayCompletionStatus: Identifiable, Equatable {
 }
 
 /// Service for managing exercise submissions
-actor SubmissionService {
+class SubmissionService {
     // MARK: - Singleton
     
     static let shared = SubmissionService()
     
     // MARK: - Properties
     
-    private let cloudKit = CloudKitManager.shared
+    private let db = Firestore.firestore()
+    private let storage = Storage.storage()
+    
+    private func submissionsCollection(forChallengeId challengeId: String) -> CollectionReference {
+        db.collection(ChallengesCollection)
+            .document(challengeId)
+            .collection(SubmissionsSubcollection)
+    }
     
     // MARK: - Initialization
     
     private init() {}
     
+    // MARK: - Video Upload
+    
+    /// Upload a video to Firebase Storage
+    func uploadVideo(
+        challengeId: String,
+        exerciseId: String,
+        userId: String,
+        date: Date,
+        videoFileURL: URL
+    ) async throws -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let dateString = dateFormatter.string(from: date)
+        
+        // Create storage path: videos/{challengeId}/{userId}/{date}/{exerciseId}.mp4
+        let storagePath = "videos/\(challengeId)/\(userId)/\(dateString)/\(exerciseId).mp4"
+        let storageRef = storage.reference().child(storagePath)
+        
+        do {
+            // Read video data
+            let videoData = try Data(contentsOf: videoFileURL)
+            
+            // Upload with metadata
+            let metadata = StorageMetadata()
+            metadata.contentType = "video/mp4"
+            
+            _ = try await storageRef.putDataAsync(videoData, metadata: metadata)
+            
+            // Get download URL
+            let downloadURL = try await storageRef.downloadURL()
+            return downloadURL.absoluteString
+        } catch {
+            throw SubmissionError.videoUploadFailed(error)
+        }
+    }
+    
+    /// Delete a video from Firebase Storage
+    func deleteVideo(videoUrl: String) async throws {
+        guard !videoUrl.isEmpty else { return }
+        
+        do {
+            // Create reference from URL
+            let storageRef = storage.reference(forURL: videoUrl)
+            try await storageRef.delete()
+        } catch {
+            // Ignore "object not found" errors
+            let nsError = error as NSError
+            if nsError.domain == StorageErrorDomain && nsError.code == StorageErrorCode.objectNotFound.rawValue {
+                return
+            }
+            throw SubmissionError.deleteFailed(error)
+        }
+    }
+    
     // MARK: - Submission CRUD
     
     /// Create a new exercise submission with video
     func createSubmission(
-        challengeID: String,
-        exerciseID: String,
-        userID: String,
+        challengeId: String,
+        exerciseId: String,
+        userId: String,
         date: Date,
         videoFileURL: URL
     ) async throws -> ExerciseSubmission {
         // Check if submission already exists for this exercise/date
         let existing = try await fetchSubmission(
-            challengeID: challengeID,
-            exerciseID: exerciseID,
-            userID: userID,
+            challengeId: challengeId,
+            exerciseId: exerciseId,
+            userId: userId,
             date: date
         )
         
@@ -103,225 +174,210 @@ actor SubmissionService {
             throw SubmissionError.alreadySubmitted
         }
         
+        // Upload video first
+        let videoUrl = try await uploadVideo(
+            challengeId: challengeId,
+            exerciseId: exerciseId,
+            userId: userId,
+            date: date,
+            videoFileURL: videoFileURL
+        )
+        
         // Create submission record
         let submission = ExerciseSubmission(
-            challengeRef: challengeID,
-            exerciseRef: exerciseID,
-            userRef: userID,
+            challengeId: challengeId,
+            exerciseId: exerciseId,
+            userId: userId,
             date: date,
+            videoUrl: videoUrl,
             status: .pending
         )
         
-        let record = submission.toRecord(videoFileURL: videoFileURL)
-        
         do {
-            let savedRecord = try await cloudKit.save(record: record)
-            guard let savedSubmission = ExerciseSubmission(from: savedRecord) else {
-                throw SubmissionError.videoUploadFailed
-            }
-            return savedSubmission
+            try await submissionsCollection(forChallengeId: challengeId)
+                .document(submission.id)
+                .setData(submission.toFirestore())
+            
+            return submission
         } catch {
-            throw SubmissionError.videoUploadFailed
+            // If Firestore save fails, try to delete the uploaded video
+            try? await deleteVideo(videoUrl: videoUrl)
+            throw SubmissionError.saveFailed(error)
         }
     }
     
     /// Fetch a specific submission
     func fetchSubmission(
-        challengeID: String,
-        exerciseID: String,
-        userID: String,
+        challengeId: String,
+        exerciseId: String,
+        userId: String,
         date: Date
     ) async throws -> ExerciseSubmission? {
         let normalizedDate = Calendar.current.startOfDay(for: date)
         let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: normalizedDate)!
         
-        let challengeRecordID = CKRecord.ID(recordName: challengeID)
-        let challengeRef = CKRecord.Reference(recordID: challengeRecordID, action: .none)
-        
-        let exerciseRecordID = CKRecord.ID(recordName: exerciseID)
-        let exerciseRef = CKRecord.Reference(recordID: exerciseRecordID, action: .none)
-        
-        let userRecordID = CKRecord.ID(recordName: userID)
-        let userRef = CKRecord.Reference(recordID: userRecordID, action: .none)
-        
-        let predicate = NSPredicate(
-            format: "%K == %@ AND %K == %@ AND %K == %@ AND %K >= %@ AND %K < %@",
-            ExerciseSubmission.FieldKey.challengeRef.rawValue, challengeRef,
-            ExerciseSubmission.FieldKey.exerciseRef.rawValue, exerciseRef,
-            ExerciseSubmission.FieldKey.userRef.rawValue, userRef,
-            ExerciseSubmission.FieldKey.date.rawValue, normalizedDate as NSDate,
-            ExerciseSubmission.FieldKey.date.rawValue, nextDay as NSDate
-        )
-        
-        let records = try await cloudKit.fetch(
-            recordType: ExerciseSubmissionRecordType,
-            predicate: predicate,
-            resultsLimit: 1
-        )
-        
-        guard let record = records.first else { return nil }
-        return ExerciseSubmission(from: record)
+        do {
+            let snapshot = try await submissionsCollection(forChallengeId: challengeId)
+                .whereField("exerciseId", isEqualTo: exerciseId)
+                .whereField("userId", isEqualTo: userId)
+                .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: normalizedDate))
+                .whereField("date", isLessThan: Timestamp(date: nextDay))
+                .limit(to: 1)
+                .getDocuments()
+            
+            guard let document = snapshot.documents.first else { return nil }
+            return ExerciseSubmission(from: document, challengeId: challengeId)
+        } catch {
+            throw SubmissionError.fetchFailed(error)
+        }
     }
     
     /// Fetch all submissions for a user on a specific date
     func fetchSubmissions(
-        challengeID: String,
-        userID: String,
+        challengeId: String,
+        userId: String,
         date: Date
     ) async throws -> [ExerciseSubmission] {
         let normalizedDate = Calendar.current.startOfDay(for: date)
         let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: normalizedDate)!
         
-        let challengeRecordID = CKRecord.ID(recordName: challengeID)
-        let challengeRef = CKRecord.Reference(recordID: challengeRecordID, action: .none)
-        
-        let userRecordID = CKRecord.ID(recordName: userID)
-        let userRef = CKRecord.Reference(recordID: userRecordID, action: .none)
-        
-        let predicate = NSPredicate(
-            format: "%K == %@ AND %K == %@ AND %K >= %@ AND %K < %@",
-            ExerciseSubmission.FieldKey.challengeRef.rawValue, challengeRef,
-            ExerciseSubmission.FieldKey.userRef.rawValue, userRef,
-            ExerciseSubmission.FieldKey.date.rawValue, normalizedDate as NSDate,
-            ExerciseSubmission.FieldKey.date.rawValue, nextDay as NSDate
-        )
-        
-        let records = try await cloudKit.fetch(
-            recordType: ExerciseSubmissionRecordType,
-            predicate: predicate,
-            resultsLimit: 20
-        )
-        
-        return records.compactMap { ExerciseSubmission(from: $0) }
+        do {
+            let snapshot = try await submissionsCollection(forChallengeId: challengeId)
+                .whereField("userId", isEqualTo: userId)
+                .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: normalizedDate))
+                .whereField("date", isLessThan: Timestamp(date: nextDay))
+                .getDocuments()
+            
+            return snapshot.documents.compactMap { ExerciseSubmission(from: $0, challengeId: challengeId) }
+        } catch {
+            throw SubmissionError.fetchFailed(error)
+        }
     }
     
     /// Fetch pending submissions to review (from other users)
     func fetchPendingSubmissionsToReview(
-        challengeID: String,
-        currentUserID: String
+        challengeId: String,
+        currentUserId: String
     ) async throws -> [ExerciseSubmission] {
-        let challengeRecordID = CKRecord.ID(recordName: challengeID)
-        let challengeRef = CKRecord.Reference(recordID: challengeRecordID, action: .none)
-        
-        let predicate = NSPredicate(
-            format: "%K == %@ AND %K == %@",
-            ExerciseSubmission.FieldKey.challengeRef.rawValue, challengeRef,
-            ExerciseSubmission.FieldKey.status.rawValue, SubmissionStatus.pending.rawValue
-        )
-        
-        let sortDescriptor = NSSortDescriptor(
-            key: ExerciseSubmission.FieldKey.createdAt.rawValue,
-            ascending: true
-        )
-        
-        let records = try await cloudKit.fetch(
-            recordType: ExerciseSubmissionRecordType,
-            predicate: predicate,
-            sortDescriptors: [sortDescriptor],
-            resultsLimit: 100
-        )
-        
-        // Filter out current user's submissions (can't review your own)
-        return records
-            .compactMap { ExerciseSubmission(from: $0) }
-            .filter { $0.userRef != currentUserID }
+        do {
+            let snapshot = try await submissionsCollection(forChallengeId: challengeId)
+                .whereField("status", isEqualTo: SubmissionStatus.pending.rawValue)
+                .order(by: "createdAt")
+                .getDocuments()
+            
+            // Filter out current user's submissions (can't review your own)
+            return snapshot.documents
+                .compactMap { ExerciseSubmission(from: $0, challengeId: challengeId) }
+                .filter { $0.userId != currentUserId }
+        } catch {
+            throw SubmissionError.fetchFailed(error)
+        }
     }
     
     /// Fetch all submissions for a challenge (for leaderboard)
-    func fetchAllSubmissions(forChallengeID challengeID: String) async throws -> [ExerciseSubmission] {
-        let challengeRecordID = CKRecord.ID(recordName: challengeID)
-        let challengeRef = CKRecord.Reference(recordID: challengeRecordID, action: .none)
-        
-        let predicate = NSPredicate(
-            format: "%K == %@",
-            ExerciseSubmission.FieldKey.challengeRef.rawValue,
-            challengeRef
-        )
-        
-        let records = try await cloudKit.fetch(
-            recordType: ExerciseSubmissionRecordType,
-            predicate: predicate,
-            resultsLimit: 1000
-        )
-        
-        return records.compactMap { ExerciseSubmission(from: $0) }
+    func fetchAllSubmissions(forChallengeId challengeId: String) async throws -> [ExerciseSubmission] {
+        do {
+            let snapshot = try await submissionsCollection(forChallengeId: challengeId)
+                .getDocuments()
+            
+            return snapshot.documents.compactMap { ExerciseSubmission(from: $0, challengeId: challengeId) }
+        } catch {
+            throw SubmissionError.fetchFailed(error)
+        }
     }
     
     // MARK: - Review Operations
     
     /// Approve a submission
     func approveSubmission(
-        submissionID: String,
-        reviewerID: String
+        submissionId: String,
+        challengeId: String,
+        reviewerUserId: String
     ) async throws -> ExerciseSubmission {
         return try await reviewSubmission(
-            submissionID: submissionID,
-            reviewerID: reviewerID,
+            submissionId: submissionId,
+            challengeId: challengeId,
+            reviewerUserId: reviewerUserId,
             approved: true
         )
     }
     
     /// Reject a submission
     func rejectSubmission(
-        submissionID: String,
-        reviewerID: String
+        submissionId: String,
+        challengeId: String,
+        reviewerUserId: String
     ) async throws -> ExerciseSubmission {
         return try await reviewSubmission(
-            submissionID: submissionID,
-            reviewerID: reviewerID,
+            submissionId: submissionId,
+            challengeId: challengeId,
+            reviewerUserId: reviewerUserId,
             approved: false
         )
     }
     
     /// Review a submission (approve or reject) and delete the video
     private func reviewSubmission(
-        submissionID: String,
-        reviewerID: String,
+        submissionId: String,
+        challengeId: String,
+        reviewerUserId: String,
         approved: Bool
     ) async throws -> ExerciseSubmission {
-        let recordID = CKRecord.ID(recordName: submissionID)
-        let record = try await cloudKit.fetch(recordID: recordID)
+        let docRef = submissionsCollection(forChallengeId: challengeId).document(submissionId)
         
-        guard var submission = ExerciseSubmission(from: record) else {
-            throw SubmissionError.submissionNotFound
+        do {
+            let document = try await docRef.getDocument()
+            
+            guard var submission = ExerciseSubmission(from: document, challengeId: challengeId) else {
+                throw SubmissionError.submissionNotFound
+            }
+            
+            // Verify reviewer is not the submitter
+            if submission.userId == reviewerUserId {
+                throw SubmissionError.cannotReviewOwnSubmission
+            }
+            
+            // Delete the video from storage
+            if let videoUrl = submission.videoUrl, !videoUrl.isEmpty {
+                try? await deleteVideo(videoUrl: videoUrl)
+            }
+            
+            // Update submission
+            submission.status = approved ? .approved : .rejected
+            submission.reviewerUserId = reviewerUserId
+            submission.reviewedAt = Date()
+            submission.pointsAwarded = approved ? 1 : 0
+            submission.videoDeleted = true
+            submission.videoUrl = nil
+            submission.updatedAt = Date()
+            
+            // Save updated submission
+            try await docRef.setData(submission.toFirestore())
+            
+            return submission
+        } catch let error as SubmissionError {
+            throw error
+        } catch {
+            throw SubmissionError.saveFailed(error)
         }
-        
-        // Verify reviewer is not the submitter
-        if submission.userRef == reviewerID {
-            throw SubmissionError.cannotReviewOwnSubmission
-        }
-        
-        // Update submission
-        submission.status = approved ? .approved : .rejected
-        submission.reviewerRef = reviewerID
-        submission.reviewedAt = Date()
-        submission.pointsAwarded = approved ? 1 : 0
-        submission.videoDeleted = true
-        submission.updatedAt = Date()
-        
-        // Update record and delete video asset
-        let updatedRecord = submission.updateRecordForReview(record)
-        _ = try await cloudKit.save(record: updatedRecord)
-        
-        return submission
     }
     
     // MARK: - Leaderboard
     
     /// Calculate leaderboard for a challenge
     func calculateLeaderboard(
-        forChallengeID challengeID: String,
+        forChallengeId challengeId: String,
         participants: [AppUser]
     ) async throws -> [LeaderboardEntry] {
-        let submissions = try await fetchAllSubmissions(forChallengeID: challengeID)
+        let submissions = try await fetchAllSubmissions(forChallengeId: challengeId)
         
         // Group submissions by user and calculate points
         var userPoints: [String: (points: Int, submissions: Int)] = [:]
         
         for submission in submissions where submission.status == .approved {
-            let userID = submission.userRef
-            let current = userPoints[userID] ?? (points: 0, submissions: 0)
-            userPoints[userID] = (
+            let userId = submission.userId
+            let current = userPoints[userId] ?? (points: 0, submissions: 0)
+            userPoints[userId] = (
                 points: current.points + submission.pointsAwarded,
                 submissions: current.submissions + 1
             )
@@ -363,73 +419,62 @@ actor SubmissionService {
     
     /// Get completion status for a date range (for calendar view)
     func getCompletionStatus(
-        challengeID: String,
-        userID: String,
+        challengeId: String,
+        userId: String,
         exerciseCount: Int,
         startDate: Date,
         endDate: Date
     ) async throws -> [DayCompletionStatus] {
-        let challengeRecordID = CKRecord.ID(recordName: challengeID)
-        let challengeRef = CKRecord.Reference(recordID: challengeRecordID, action: .none)
-        
-        let userRecordID = CKRecord.ID(recordName: userID)
-        let userRef = CKRecord.Reference(recordID: userRecordID, action: .none)
-        
         let normalizedStart = Calendar.current.startOfDay(for: startDate)
         let normalizedEnd = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: endDate))!
         
-        let predicate = NSPredicate(
-            format: "%K == %@ AND %K == %@ AND %K >= %@ AND %K < %@",
-            ExerciseSubmission.FieldKey.challengeRef.rawValue, challengeRef,
-            ExerciseSubmission.FieldKey.userRef.rawValue, userRef,
-            ExerciseSubmission.FieldKey.date.rawValue, normalizedStart as NSDate,
-            ExerciseSubmission.FieldKey.date.rawValue, normalizedEnd as NSDate
-        )
-        
-        let records = try await cloudKit.fetch(
-            recordType: ExerciseSubmissionRecordType,
-            predicate: predicate,
-            resultsLimit: 500
-        )
-        
-        let submissions = records.compactMap { ExerciseSubmission(from: $0) }
-        
-        // Group by date
-        var statusByDate: [Date: DayCompletionStatus] = [:]
-        
-        // Initialize all dates in range
-        var currentDate = normalizedStart
-        while currentDate <= Calendar.current.startOfDay(for: endDate) {
-            let dateID = ISO8601DateFormatter().string(from: currentDate)
-            statusByDate[currentDate] = DayCompletionStatus(
-                id: dateID,
-                date: currentDate,
-                totalExercises: exerciseCount,
-                approvedCount: 0,
-                pendingCount: 0,
-                rejectedCount: 0
-            )
-            currentDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
-        }
-        
-        // Count submissions by status
-        for submission in submissions {
-            let date = Calendar.current.startOfDay(for: submission.date)
-            guard var status = statusByDate[date] else { continue }
+        do {
+            let snapshot = try await submissionsCollection(forChallengeId: challengeId)
+                .whereField("userId", isEqualTo: userId)
+                .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: normalizedStart))
+                .whereField("date", isLessThan: Timestamp(date: normalizedEnd))
+                .getDocuments()
             
-            switch submission.status {
-            case .approved:
-                status.approvedCount += 1
-            case .pending:
-                status.pendingCount += 1
-            case .rejected:
-                status.rejectedCount += 1
+            let submissions = snapshot.documents.compactMap { ExerciseSubmission(from: $0, challengeId: challengeId) }
+            
+            // Group by date
+            var statusByDate: [Date: DayCompletionStatus] = [:]
+            
+            // Initialize all dates in range
+            var currentDate = normalizedStart
+            while currentDate <= Calendar.current.startOfDay(for: endDate) {
+                let dateId = ISO8601DateFormatter().string(from: currentDate)
+                statusByDate[currentDate] = DayCompletionStatus(
+                    id: dateId,
+                    date: currentDate,
+                    totalExercises: exerciseCount,
+                    approvedCount: 0,
+                    pendingCount: 0,
+                    rejectedCount: 0
+                )
+                currentDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
             }
             
-            statusByDate[date] = status
+            // Count submissions by status
+            for submission in submissions {
+                let date = Calendar.current.startOfDay(for: submission.date)
+                guard var status = statusByDate[date] else { continue }
+                
+                switch submission.status {
+                case .approved:
+                    status.approvedCount += 1
+                case .pending:
+                    status.pendingCount += 1
+                case .rejected:
+                    status.rejectedCount += 1
+                }
+                
+                statusByDate[date] = status
+            }
+            
+            return Array(statusByDate.values).sorted { $0.date < $1.date }
+        } catch {
+            throw SubmissionError.fetchFailed(error)
         }
-        
-        return Array(statusByDate.values).sorted { $0.date < $1.date }
     }
 }
-

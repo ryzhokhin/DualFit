@@ -2,27 +2,26 @@
 //  AppUser.swift
 //  DualFit
 //
-//  Represents a user of the app, linked to their iCloud identity.
+//  Represents a user of the app, linked to their Firebase Auth identity.
 //
 
 import Foundation
-import CloudKit
+import FirebaseFirestore
 
-/// CloudKit record type name for AppUser
-let AppUserRecordType = "AppUser"
+/// Firestore collection name for users
+let UsersCollection = "users"
 
 /// Represents a user in the DualFit app
-struct AppUser: Identifiable, Equatable, Hashable {
-    let id: String                    // CloudKit record name
-    let icloudUserRecordID: String    // The user's iCloud identity
+struct AppUser: Identifiable, Equatable, Hashable, Codable {
+    let id: String                    // Firebase Auth UID
     var displayName: String
     var avatarEmoji: String
     let createdAt: Date
     
-    // MARK: - CloudKit Field Keys
+    // MARK: - Coding Keys
     
-    enum FieldKey: String {
-        case icloudUserRecordID
+    enum CodingKeys: String, CodingKey {
+        case id
         case displayName
         case avatarEmoji
         case createdAt
@@ -31,50 +30,42 @@ struct AppUser: Identifiable, Equatable, Hashable {
     // MARK: - Initialization
     
     init(
-        id: String = UUID().uuidString,
-        icloudUserRecordID: String,
+        id: String,
         displayName: String,
         avatarEmoji: String = "💪",
         createdAt: Date = Date()
     ) {
         self.id = id
-        self.icloudUserRecordID = icloudUserRecordID
         self.displayName = displayName
         self.avatarEmoji = avatarEmoji
         self.createdAt = createdAt
     }
     
-    // MARK: - CloudKit Conversion
+    // MARK: - Firestore Conversion
     
-    /// Initialize from a CloudKit record
-    init?(from record: CKRecord) {
-        guard record.recordType == AppUserRecordType else { return nil }
-        
-        self.id = record.recordID.recordName
-        self.icloudUserRecordID = record[FieldKey.icloudUserRecordID.rawValue] as? String ?? ""
-        self.displayName = record[FieldKey.displayName.rawValue] as? String ?? "Unknown"
-        self.avatarEmoji = record[FieldKey.avatarEmoji.rawValue] as? String ?? "💪"
-        self.createdAt = record[FieldKey.createdAt.rawValue] as? Date ?? record.creationDate ?? Date()
+    /// Convert to Firestore data dictionary
+    func toFirestore() -> [String: Any] {
+        return [
+            "id": id,
+            "displayName": displayName,
+            "avatarEmoji": avatarEmoji,
+            "createdAt": Timestamp(date: createdAt)
+        ]
     }
     
-    /// Convert to a CloudKit record
-    func toRecord() -> CKRecord {
-        let recordID = CKRecord.ID(recordName: id)
-        let record = CKRecord(recordType: AppUserRecordType, recordID: recordID)
+    /// Initialize from Firestore document
+    init?(from document: DocumentSnapshot) {
+        guard let data = document.data() else { return nil }
         
-        record[FieldKey.icloudUserRecordID.rawValue] = icloudUserRecordID
-        record[FieldKey.displayName.rawValue] = displayName
-        record[FieldKey.avatarEmoji.rawValue] = avatarEmoji
-        record[FieldKey.createdAt.rawValue] = createdAt
+        self.id = document.documentID
+        self.displayName = data["displayName"] as? String ?? "Unknown"
+        self.avatarEmoji = data["avatarEmoji"] as? String ?? "💪"
         
-        return record
-    }
-    
-    /// Update an existing CloudKit record with current values
-    func updateRecord(_ record: CKRecord) -> CKRecord {
-        record[FieldKey.displayName.rawValue] = displayName
-        record[FieldKey.avatarEmoji.rawValue] = avatarEmoji
-        return record
+        if let timestamp = data["createdAt"] as? Timestamp {
+            self.createdAt = timestamp.dateValue()
+        } else {
+            self.createdAt = Date()
+        }
     }
 }
 
@@ -82,9 +73,8 @@ struct AppUser: Identifiable, Equatable, Hashable {
 
 extension AppUser {
     static let sample = AppUser(
-        icloudUserRecordID: "sample-icloud-id",
+        id: "sample-user-id",
         displayName: "Andrii",
         avatarEmoji: "🏋️"
     )
 }
-

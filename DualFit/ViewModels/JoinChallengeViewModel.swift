@@ -60,7 +60,7 @@ class JoinChallengeViewModel: ObservableObject {
     }
     
     /// Join the found challenge
-    func joinChallenge(userID: String) async {
+    func joinChallenge(userId: String) async {
         guard let challenge = foundChallenge else {
             errorMessage = "No challenge selected."
             return
@@ -71,8 +71,8 @@ class JoinChallengeViewModel: ObservableObject {
         
         do {
             _ = try await challengeService.joinChallenge(
-                challengeID: challenge.id,
-                userID: userID
+                challengeId: challenge.id,
+                userId: userId
             )
             
             joinedSuccessfully = true
@@ -98,4 +98,3 @@ class JoinChallengeViewModel: ObservableObject {
         errorMessage = nil
     }
 }
-

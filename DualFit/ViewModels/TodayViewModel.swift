@@ -46,8 +46,8 @@ class TodayViewModel: ObservableObject {
     
     // MARK: - Properties
     
-    private let challengeID: String
-    private let currentUserID: String
+    private let challengeId: String
+    private let currentUserId: String
     private var exercises: [ChallengeExercise] = []
     
     private let submissionService = SubmissionService.shared
@@ -76,9 +76,9 @@ class TodayViewModel: ObservableObject {
     
     // MARK: - Initialization
     
-    init(challengeID: String, currentUserID: String) {
-        self.challengeID = challengeID
-        self.currentUserID = currentUserID
+    init(challengeId: String, currentUserId: String) {
+        self.challengeId = challengeId
+        self.currentUserId = currentUserId
     }
     
     // MARK: - Public Methods
@@ -95,14 +95,14 @@ class TodayViewModel: ObservableObject {
         
         do {
             let submissions = try await submissionService.fetchSubmissions(
-                challengeID: challengeID,
-                userID: currentUserID,
+                challengeId: challengeId,
+                userId: currentUserId,
                 date: selectedDate
             )
             
             // Map exercises to items with submissions
             exerciseItems = exercises.map { exercise in
-                let submission = submissions.first { $0.exerciseRef == exercise.id }
+                let submission = submissions.first { $0.exerciseId == exercise.id }
                 return TodayExerciseItem(
                     id: exercise.id,
                     exercise: exercise,
@@ -143,9 +143,9 @@ class TodayViewModel: ObservableObject {
             
             // Create submission
             let submission = try await submissionService.createSubmission(
-                challengeID: challengeID,
-                exerciseID: exercise.id,
-                userID: currentUserID,
+                challengeId: challengeId,
+                exerciseId: exercise.id,
+                userId: currentUserId,
                 date: selectedDate,
                 videoFileURL: compressedURL
             )
@@ -223,4 +223,3 @@ struct VideoTransferable: Transferable {
         }
     }
 }
-

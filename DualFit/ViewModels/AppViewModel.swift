@@ -2,7 +2,7 @@
 //  AppViewModel.swift
 //  DualFit
 //
-//  Global app state and current user management.
+//  Global app state and current user management with Firebase Auth.
 //
 
 import Foundation
@@ -28,6 +28,7 @@ class AppViewModel: ObservableObject {
     
     // MARK: - Services
     
+    private let authService = AuthService.shared
     private let userService = UserService.shared
     
     // MARK: - Initialization
@@ -41,29 +42,22 @@ class AppViewModel: ObservableObject {
     
     // MARK: - Public Methods
     
-    /// Check iCloud availability and load user
+    /// Check Firebase Auth and load user
     func checkInitialState() async {
         appState = .loading
         
         do {
-            // Check iCloud availability
-            let isAvailable = try await userService.checkiCloudAvailability()
+            // Sign in anonymously if not already signed in
+            let userId = try await authService.ensureSignedIn()
             
-            guard isAvailable else {
-                appState = .error("iCloud is not available. Please sign in to iCloud in Settings.")
-                return
-            }
-            
-            // Try to load existing user
-            if let user = try await userService.fetchCurrentUser() {
+            // Try to load existing user profile
+            if let user = try await userService.fetchUser(byId: userId) {
                 currentUser = user
                 appState = .ready
             } else {
-                // User needs to complete onboarding
+                // User needs to complete onboarding (set display name)
                 appState = .needsOnboarding
             }
-        } catch let error as CloudKitError {
-            appState = .error(error.localizedDescription)
         } catch {
             appState = .error(error.localizedDescription)
         }
@@ -71,11 +65,17 @@ class AppViewModel: ObservableObject {
     
     /// Complete onboarding by creating user profile
     func completeOnboarding(displayName: String, avatarEmoji: String) async {
+        guard let userId = authService.userId else {
+            errorMessage = "Not signed in. Please restart the app."
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
         
         do {
             let user = try await userService.createUser(
+                userId: userId,
                 displayName: displayName,
                 avatarEmoji: avatarEmoji
             )
@@ -111,8 +111,10 @@ class AppViewModel: ObservableObject {
     
     /// Refresh user data
     func refreshUser() async {
+        guard let userId = authService.userId else { return }
+        
         do {
-            if let user = try await userService.fetchCurrentUser() {
+            if let user = try await userService.fetchUser(byId: userId) {
                 currentUser = user
             }
         } catch {
@@ -130,4 +132,3 @@ class AppViewModel: ObservableObject {
         await checkInitialState()
     }
 }
-

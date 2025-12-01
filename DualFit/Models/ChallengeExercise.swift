@@ -6,23 +6,24 @@
 //
 
 import Foundation
-import CloudKit
+import FirebaseFirestore
 
-/// CloudKit record type name for ChallengeExercise
-let ChallengeExerciseRecordType = "ChallengeExercise"
+/// Firestore subcollection name for exercises
+let ExercisesSubcollection = "exercises"
 
 /// Represents an exercise within a fitness challenge
-struct ChallengeExercise: Identifiable, Equatable, Hashable {
-    let id: String                    // CloudKit record name
-    let challengeRef: String          // Reference to Challenge record ID
+struct ChallengeExercise: Identifiable, Equatable, Hashable, Codable {
+    let id: String                    // Firestore document ID
+    let challengeId: String           // Parent challenge ID
     var name: String
     var dailyRequiredReps: Int
     var order: Int                    // For sorting exercises in UI
     
-    // MARK: - CloudKit Field Keys
+    // MARK: - Coding Keys
     
-    enum FieldKey: String {
-        case challengeRef
+    enum CodingKeys: String, CodingKey {
+        case id
+        case challengeId
         case name
         case dailyRequiredReps
         case order
@@ -32,52 +33,40 @@ struct ChallengeExercise: Identifiable, Equatable, Hashable {
     
     init(
         id: String = UUID().uuidString,
-        challengeRef: String,
+        challengeId: String,
         name: String,
         dailyRequiredReps: Int = 10,
         order: Int = 0
     ) {
         self.id = id
-        self.challengeRef = challengeRef
+        self.challengeId = challengeId
         self.name = name
         self.dailyRequiredReps = dailyRequiredReps
         self.order = order
     }
     
-    // MARK: - CloudKit Conversion
+    // MARK: - Firestore Conversion
     
-    /// Initialize from a CloudKit record
-    init?(from record: CKRecord) {
-        guard record.recordType == ChallengeExerciseRecordType else { return nil }
-        
-        self.id = record.recordID.recordName
-        
-        // Handle reference field
-        if let ref = record[FieldKey.challengeRef.rawValue] as? CKRecord.Reference {
-            self.challengeRef = ref.recordID.recordName
-        } else {
-            self.challengeRef = ""
-        }
-        
-        self.name = record[FieldKey.name.rawValue] as? String ?? "Unknown Exercise"
-        self.dailyRequiredReps = record[FieldKey.dailyRequiredReps.rawValue] as? Int ?? 10
-        self.order = record[FieldKey.order.rawValue] as? Int ?? 0
+    /// Convert to Firestore data dictionary
+    func toFirestore() -> [String: Any] {
+        return [
+            "id": id,
+            "challengeId": challengeId,
+            "name": name,
+            "dailyRequiredReps": dailyRequiredReps,
+            "order": order
+        ]
     }
     
-    /// Convert to a CloudKit record
-    func toRecord() -> CKRecord {
-        let recordID = CKRecord.ID(recordName: id)
-        let record = CKRecord(recordType: ChallengeExerciseRecordType, recordID: recordID)
+    /// Initialize from Firestore document
+    init?(from document: DocumentSnapshot, challengeId: String) {
+        guard let data = document.data() else { return nil }
         
-        // Create reference to challenge
-        let challengeRecordID = CKRecord.ID(recordName: challengeRef)
-        record[FieldKey.challengeRef.rawValue] = CKRecord.Reference(recordID: challengeRecordID, action: .deleteSelf)
-        
-        record[FieldKey.name.rawValue] = name
-        record[FieldKey.dailyRequiredReps.rawValue] = dailyRequiredReps
-        record[FieldKey.order.rawValue] = order
-        
-        return record
+        self.id = document.documentID
+        self.challengeId = challengeId
+        self.name = data["name"] as? String ?? "Unknown Exercise"
+        self.dailyRequiredReps = data["dailyRequiredReps"] as? Int ?? 10
+        self.order = data["order"] as? Int ?? 0
     }
 }
 
@@ -85,10 +74,9 @@ struct ChallengeExercise: Identifiable, Equatable, Hashable {
 
 extension ChallengeExercise {
     static let samples: [ChallengeExercise] = [
-        ChallengeExercise(challengeRef: Challenge.sample.id, name: "Push-ups", dailyRequiredReps: 10, order: 0),
-        ChallengeExercise(challengeRef: Challenge.sample.id, name: "Squats", dailyRequiredReps: 15, order: 1),
-        ChallengeExercise(challengeRef: Challenge.sample.id, name: "Planks", dailyRequiredReps: 1, order: 2),
-        ChallengeExercise(challengeRef: Challenge.sample.id, name: "Burpees", dailyRequiredReps: 5, order: 3)
+        ChallengeExercise(challengeId: Challenge.sample.id, name: "Push-ups", dailyRequiredReps: 10, order: 0),
+        ChallengeExercise(challengeId: Challenge.sample.id, name: "Squats", dailyRequiredReps: 15, order: 1),
+        ChallengeExercise(challengeId: Challenge.sample.id, name: "Planks", dailyRequiredReps: 1, order: 2),
+        ChallengeExercise(challengeId: Challenge.sample.id, name: "Burpees", dailyRequiredReps: 5, order: 3)
     ]
 }
-

@@ -46,8 +46,8 @@ class ReviewViewModel: ObservableObject {
     
     // MARK: - Properties
     
-    private let challengeID: String
-    private let currentUserID: String
+    private let challengeId: String
+    private let currentUserId: String
     private var exercises: [ChallengeExercise] = []
     private var participants: [AppUser] = []
     
@@ -65,9 +65,9 @@ class ReviewViewModel: ObservableObject {
     
     // MARK: - Initialization
     
-    init(challengeID: String, currentUserID: String) {
-        self.challengeID = challengeID
-        self.currentUserID = currentUserID
+    init(challengeId: String, currentUserId: String) {
+        self.challengeId = challengeId
+        self.currentUserId = currentUserId
     }
     
     // MARK: - Public Methods
@@ -89,14 +89,14 @@ class ReviewViewModel: ObservableObject {
         
         do {
             let submissions = try await submissionService.fetchPendingSubmissionsToReview(
-                challengeID: challengeID,
-                currentUserID: currentUserID
+                challengeId: challengeId,
+                currentUserId: currentUserId
             )
             
             // Map to review items with user and exercise details
             pendingItems = submissions.map { submission in
-                let user = participants.first { $0.id == submission.userRef }
-                let exercise = exercises.first { $0.id == submission.exerciseRef }
+                let user = participants.first { $0.id == submission.userId }
+                let exercise = exercises.first { $0.id == submission.exerciseId }
                 
                 return PendingReviewItem(
                     id: submission.id,
@@ -137,8 +137,9 @@ class ReviewViewModel: ObservableObject {
         
         do {
             _ = try await submissionService.approveSubmission(
-                submissionID: item.submission.id,
-                reviewerID: currentUserID
+                submissionId: item.submission.id,
+                challengeId: challengeId,
+                reviewerUserId: currentUserId
             )
             
             // Remove from pending list
@@ -163,8 +164,9 @@ class ReviewViewModel: ObservableObject {
         
         do {
             _ = try await submissionService.rejectSubmission(
-                submissionID: item.submission.id,
-                reviewerID: currentUserID
+                submissionId: item.submission.id,
+                challengeId: challengeId,
+                reviewerUserId: currentUserId
             )
             
             // Remove from pending list
@@ -193,4 +195,3 @@ class ReviewViewModel: ObservableObject {
         errorMessage = nil
     }
 }
-

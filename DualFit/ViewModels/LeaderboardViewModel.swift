@@ -19,8 +19,8 @@ class LeaderboardViewModel: ObservableObject {
     
     // MARK: - Properties
     
-    private let challengeID: String
-    private let currentUserID: String
+    private let challengeId: String
+    private let currentUserId: String
     private var participants: [AppUser] = []
     
     private let submissionService = SubmissionService.shared
@@ -37,7 +37,7 @@ class LeaderboardViewModel: ObservableObject {
     }
     
     var currentUserEntry: LeaderboardEntry? {
-        entries.first { $0.user.id == currentUserID }
+        entries.first { $0.user.id == currentUserId }
     }
     
     var currentUserRank: Int {
@@ -51,9 +51,9 @@ class LeaderboardViewModel: ObservableObject {
     
     // MARK: - Initialization
     
-    init(challengeID: String, currentUserID: String) {
-        self.challengeID = challengeID
-        self.currentUserID = currentUserID
+    init(challengeId: String, currentUserId: String) {
+        self.challengeId = challengeId
+        self.currentUserId = currentUserId
     }
     
     // MARK: - Public Methods
@@ -72,7 +72,7 @@ class LeaderboardViewModel: ObservableObject {
         
         do {
             entries = try await submissionService.calculateLeaderboard(
-                forChallengeID: challengeID,
+                forChallengeId: challengeId,
                 participants: participants
             )
         } catch {
@@ -94,7 +94,7 @@ class LeaderboardViewModel: ObservableObject {
     
     /// Check if entry is current user
     func isCurrentUser(_ entry: LeaderboardEntry) -> Bool {
-        entry.user.id == currentUserID
+        entry.user.id == currentUserId
     }
     
     /// Clear error message
@@ -102,4 +102,3 @@ class LeaderboardViewModel: ObservableObject {
         errorMessage = nil
     }
 }
-

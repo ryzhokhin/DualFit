@@ -6,10 +6,10 @@
 //
 
 import Foundation
-import CloudKit
+import FirebaseFirestore
 
-/// CloudKit record type name for ExerciseSubmission
-let ExerciseSubmissionRecordType = "ExerciseSubmission"
+/// Firestore subcollection name for submissions
+let SubmissionsSubcollection = "submissions"
 
 /// Submission review status
 enum SubmissionStatus: String, Codable, CaseIterable {
@@ -35,15 +35,15 @@ enum SubmissionStatus: String, Codable, CaseIterable {
 }
 
 /// Represents a video submission for an exercise
-struct ExerciseSubmission: Identifiable, Equatable, Hashable {
-    let id: String                    // CloudKit record name
-    let challengeRef: String          // Reference to Challenge record ID
-    let exerciseRef: String           // Reference to ChallengeExercise record ID
-    let userRef: String               // Reference to AppUser record ID (who submitted)
+struct ExerciseSubmission: Identifiable, Equatable, Hashable, Codable {
+    let id: String                    // Firestore document ID
+    let challengeId: String           // Parent challenge ID
+    let exerciseId: String            // Exercise ID
+    let userId: String                // User ID (who submitted)
     let date: Date                    // The day this submission is for (date only)
-    var videoAssetURL: URL?           // Local URL to video asset (from CKAsset)
+    var videoUrl: String?             // Firebase Storage URL
     var status: SubmissionStatus
-    var reviewerRef: String?          // Reference to AppUser who reviewed
+    var reviewerUserId: String?       // User ID who reviewed
     var reviewedAt: Date?
     var videoDeleted: Bool
     var pointsAwarded: Int
@@ -54,7 +54,7 @@ struct ExerciseSubmission: Identifiable, Equatable, Hashable {
     
     /// Whether the video is available for playback
     var isVideoAvailable: Bool {
-        !videoDeleted && videoAssetURL != nil
+        !videoDeleted && videoUrl != nil && !(videoUrl?.isEmpty ?? true)
     }
     
     /// Formatted date string for display
@@ -64,16 +64,23 @@ struct ExerciseSubmission: Identifiable, Equatable, Hashable {
         return formatter.string(from: date)
     }
     
-    // MARK: - CloudKit Field Keys
+    /// Video URL as URL type
+    var videoURL: URL? {
+        guard let urlString = videoUrl, !urlString.isEmpty else { return nil }
+        return URL(string: urlString)
+    }
     
-    enum FieldKey: String {
-        case challengeRef
-        case exerciseRef
-        case userRef
+    // MARK: - Coding Keys
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case challengeId
+        case exerciseId
+        case userId
         case date
-        case videoAsset
+        case videoUrl
         case status
-        case reviewerRef
+        case reviewerUserId
         case reviewedAt
         case videoDeleted
         case pointsAwarded
@@ -85,13 +92,13 @@ struct ExerciseSubmission: Identifiable, Equatable, Hashable {
     
     init(
         id: String = UUID().uuidString,
-        challengeRef: String,
-        exerciseRef: String,
-        userRef: String,
+        challengeId: String,
+        exerciseId: String,
+        userId: String,
         date: Date,
-        videoAssetURL: URL? = nil,
+        videoUrl: String? = nil,
         status: SubmissionStatus = .pending,
-        reviewerRef: String? = nil,
+        reviewerUserId: String? = nil,
         reviewedAt: Date? = nil,
         videoDeleted: Bool = false,
         pointsAwarded: Int = 0,
@@ -99,14 +106,14 @@ struct ExerciseSubmission: Identifiable, Equatable, Hashable {
         updatedAt: Date = Date()
     ) {
         self.id = id
-        self.challengeRef = challengeRef
-        self.exerciseRef = exerciseRef
-        self.userRef = userRef
+        self.challengeId = challengeId
+        self.exerciseId = exerciseId
+        self.userId = userId
         // Normalize date to start of day
         self.date = Calendar.current.startOfDay(for: date)
-        self.videoAssetURL = videoAssetURL
+        self.videoUrl = videoUrl
         self.status = status
-        self.reviewerRef = reviewerRef
+        self.reviewerUserId = reviewerUserId
         self.reviewedAt = reviewedAt
         self.videoDeleted = videoDeleted
         self.pointsAwarded = pointsAwarded
@@ -114,120 +121,80 @@ struct ExerciseSubmission: Identifiable, Equatable, Hashable {
         self.updatedAt = updatedAt
     }
     
-    // MARK: - CloudKit Conversion
+    // MARK: - Firestore Conversion
     
-    /// Initialize from a CloudKit record
-    init?(from record: CKRecord) {
-        guard record.recordType == ExerciseSubmissionRecordType else { return nil }
+    /// Convert to Firestore data dictionary
+    func toFirestore() -> [String: Any] {
+        var data: [String: Any] = [
+            "id": id,
+            "challengeId": challengeId,
+            "exerciseId": exerciseId,
+            "userId": userId,
+            "date": Timestamp(date: date),
+            "status": status.rawValue,
+            "videoDeleted": videoDeleted,
+            "pointsAwarded": pointsAwarded,
+            "createdAt": Timestamp(date: createdAt),
+            "updatedAt": Timestamp(date: updatedAt)
+        ]
         
-        self.id = record.recordID.recordName
-        
-        // Handle challenge reference
-        if let ref = record[FieldKey.challengeRef.rawValue] as? CKRecord.Reference {
-            self.challengeRef = ref.recordID.recordName
-        } else {
-            self.challengeRef = ""
+        if let videoUrl = videoUrl {
+            data["videoUrl"] = videoUrl
         }
         
-        // Handle exercise reference
-        if let ref = record[FieldKey.exerciseRef.rawValue] as? CKRecord.Reference {
-            self.exerciseRef = ref.recordID.recordName
-        } else {
-            self.exerciseRef = ""
+        if let reviewerUserId = reviewerUserId {
+            data["reviewerUserId"] = reviewerUserId
         }
         
-        // Handle user reference
-        if let ref = record[FieldKey.userRef.rawValue] as? CKRecord.Reference {
-            self.userRef = ref.recordID.recordName
-        } else {
-            self.userRef = ""
+        if let reviewedAt = reviewedAt {
+            data["reviewedAt"] = Timestamp(date: reviewedAt)
         }
         
-        self.date = record[FieldKey.date.rawValue] as? Date ?? Date()
+        return data
+    }
+    
+    /// Initialize from Firestore document
+    init?(from document: DocumentSnapshot, challengeId: String) {
+        guard let data = document.data() else { return nil }
         
-        // Handle video asset
-        if let asset = record[FieldKey.videoAsset.rawValue] as? CKAsset {
-            self.videoAssetURL = asset.fileURL
+        self.id = document.documentID
+        self.challengeId = challengeId
+        self.exerciseId = data["exerciseId"] as? String ?? ""
+        self.userId = data["userId"] as? String ?? ""
+        
+        if let timestamp = data["date"] as? Timestamp {
+            self.date = timestamp.dateValue()
         } else {
-            self.videoAssetURL = nil
+            self.date = Date()
         }
         
-        let statusString = record[FieldKey.status.rawValue] as? String ?? "pending"
+        self.videoUrl = data["videoUrl"] as? String
+        
+        let statusString = data["status"] as? String ?? "pending"
         self.status = SubmissionStatus(rawValue: statusString) ?? .pending
         
-        // Handle reviewer reference
-        if let ref = record[FieldKey.reviewerRef.rawValue] as? CKRecord.Reference {
-            self.reviewerRef = ref.recordID.recordName
+        self.reviewerUserId = data["reviewerUserId"] as? String
+        
+        if let timestamp = data["reviewedAt"] as? Timestamp {
+            self.reviewedAt = timestamp.dateValue()
         } else {
-            self.reviewerRef = nil
+            self.reviewedAt = nil
         }
         
-        self.reviewedAt = record[FieldKey.reviewedAt.rawValue] as? Date
-        self.videoDeleted = record[FieldKey.videoDeleted.rawValue] as? Bool ?? false
-        self.pointsAwarded = record[FieldKey.pointsAwarded.rawValue] as? Int ?? 0
-        self.createdAt = record[FieldKey.createdAt.rawValue] as? Date ?? record.creationDate ?? Date()
-        self.updatedAt = record[FieldKey.updatedAt.rawValue] as? Date ?? record.modificationDate ?? Date()
-    }
-    
-    /// Convert to a CloudKit record (for new submissions)
-    func toRecord(videoFileURL: URL? = nil) -> CKRecord {
-        let recordID = CKRecord.ID(recordName: id)
-        let record = CKRecord(recordType: ExerciseSubmissionRecordType, recordID: recordID)
+        self.videoDeleted = data["videoDeleted"] as? Bool ?? false
+        self.pointsAwarded = data["pointsAwarded"] as? Int ?? 0
         
-        // Create references
-        let challengeRecordID = CKRecord.ID(recordName: challengeRef)
-        record[FieldKey.challengeRef.rawValue] = CKRecord.Reference(recordID: challengeRecordID, action: .deleteSelf)
-        
-        let exerciseRecordID = CKRecord.ID(recordName: exerciseRef)
-        record[FieldKey.exerciseRef.rawValue] = CKRecord.Reference(recordID: exerciseRecordID, action: .deleteSelf)
-        
-        let userRecordID = CKRecord.ID(recordName: userRef)
-        record[FieldKey.userRef.rawValue] = CKRecord.Reference(recordID: userRecordID, action: .none)
-        
-        record[FieldKey.date.rawValue] = date
-        
-        // Handle video asset
-        if let url = videoFileURL {
-            record[FieldKey.videoAsset.rawValue] = CKAsset(fileURL: url)
+        if let timestamp = data["createdAt"] as? Timestamp {
+            self.createdAt = timestamp.dateValue()
+        } else {
+            self.createdAt = Date()
         }
         
-        record[FieldKey.status.rawValue] = status.rawValue
-        
-        // Handle reviewer reference
-        if let reviewer = reviewerRef {
-            let reviewerRecordID = CKRecord.ID(recordName: reviewer)
-            record[FieldKey.reviewerRef.rawValue] = CKRecord.Reference(recordID: reviewerRecordID, action: .none)
+        if let timestamp = data["updatedAt"] as? Timestamp {
+            self.updatedAt = timestamp.dateValue()
+        } else {
+            self.updatedAt = Date()
         }
-        
-        record[FieldKey.reviewedAt.rawValue] = reviewedAt
-        record[FieldKey.videoDeleted.rawValue] = videoDeleted
-        record[FieldKey.pointsAwarded.rawValue] = pointsAwarded
-        record[FieldKey.createdAt.rawValue] = createdAt
-        record[FieldKey.updatedAt.rawValue] = updatedAt
-        
-        return record
-    }
-    
-    /// Update an existing CloudKit record after review
-    func updateRecordForReview(_ record: CKRecord) -> CKRecord {
-        record[FieldKey.status.rawValue] = status.rawValue
-        
-        if let reviewer = reviewerRef {
-            let reviewerRecordID = CKRecord.ID(recordName: reviewer)
-            record[FieldKey.reviewerRef.rawValue] = CKRecord.Reference(recordID: reviewerRecordID, action: .none)
-        }
-        
-        record[FieldKey.reviewedAt.rawValue] = reviewedAt
-        record[FieldKey.videoDeleted.rawValue] = videoDeleted
-        record[FieldKey.pointsAwarded.rawValue] = pointsAwarded
-        record[FieldKey.updatedAt.rawValue] = Date()
-        
-        // Remove video asset to delete it
-        if videoDeleted {
-            record[FieldKey.videoAsset.rawValue] = nil
-        }
-        
-        return record
     }
 }
 
@@ -235,11 +202,10 @@ struct ExerciseSubmission: Identifiable, Equatable, Hashable {
 
 extension ExerciseSubmission {
     static let sample = ExerciseSubmission(
-        challengeRef: Challenge.sample.id,
-        exerciseRef: ChallengeExercise.samples[0].id,
-        userRef: AppUser.sample.id,
+        challengeId: Challenge.sample.id,
+        exerciseId: ChallengeExercise.samples[0].id,
+        userId: AppUser.sample.id,
         date: Date(),
         status: .pending
     )
 }
-

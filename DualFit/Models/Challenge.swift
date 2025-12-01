@@ -6,17 +6,17 @@
 //
 
 import Foundation
-import CloudKit
+import FirebaseFirestore
 
-/// CloudKit record type name for Challenge
-let ChallengeRecordType = "Challenge"
+/// Firestore collection name for challenges
+let ChallengesCollection = "challenges"
 
 /// Represents a fitness challenge
-struct Challenge: Identifiable, Equatable, Hashable {
-    let id: String                    // CloudKit record name (also serves as join code)
+struct Challenge: Identifiable, Equatable, Hashable, Codable {
+    let id: String                    // Firestore document ID
     var name: String
     var description: String
-    let createdByUserRef: String      // Reference to AppUser record ID
+    let createdByUserId: String       // User ID who created this
     var startDate: Date
     var endDate: Date
     var maxParticipants: Int
@@ -24,9 +24,8 @@ struct Challenge: Identifiable, Equatable, Hashable {
     
     // MARK: - Computed Properties
     
-    /// The join code for this challenge (uses the record ID)
+    /// The join code for this challenge (uses first 8 chars of ID)
     var joinCode: String {
-        // Use first 8 characters of ID for a shorter code
         String(id.prefix(8)).uppercased()
     }
     
@@ -57,12 +56,13 @@ struct Challenge: Identifiable, Equatable, Hashable {
         return max(0, min((components.day ?? 0) + 1, totalDays))
     }
     
-    // MARK: - CloudKit Field Keys
+    // MARK: - Coding Keys
     
-    enum FieldKey: String {
+    enum CodingKeys: String, CodingKey {
+        case id
         case name
         case description
-        case createdByUserRef
+        case createdByUserId
         case startDate
         case endDate
         case maxParticipants
@@ -75,7 +75,7 @@ struct Challenge: Identifiable, Equatable, Hashable {
         id: String = UUID().uuidString,
         name: String,
         description: String = "",
-        createdByUserRef: String,
+        createdByUserId: String,
         startDate: Date = Date(),
         endDate: Date = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date(),
         maxParticipants: Int = 10,
@@ -84,54 +84,57 @@ struct Challenge: Identifiable, Equatable, Hashable {
         self.id = id
         self.name = name
         self.description = description
-        self.createdByUserRef = createdByUserRef
+        self.createdByUserId = createdByUserId
         self.startDate = startDate
         self.endDate = endDate
         self.maxParticipants = min(maxParticipants, 10) // Enforce max 10
         self.createdAt = createdAt
     }
     
-    // MARK: - CloudKit Conversion
+    // MARK: - Firestore Conversion
     
-    /// Initialize from a CloudKit record
-    init?(from record: CKRecord) {
-        guard record.recordType == ChallengeRecordType else { return nil }
-        
-        self.id = record.recordID.recordName
-        self.name = record[FieldKey.name.rawValue] as? String ?? "Unnamed Challenge"
-        self.description = record[FieldKey.description.rawValue] as? String ?? ""
-        
-        // Handle reference field
-        if let ref = record[FieldKey.createdByUserRef.rawValue] as? CKRecord.Reference {
-            self.createdByUserRef = ref.recordID.recordName
-        } else {
-            self.createdByUserRef = ""
-        }
-        
-        self.startDate = record[FieldKey.startDate.rawValue] as? Date ?? Date()
-        self.endDate = record[FieldKey.endDate.rawValue] as? Date ?? Date()
-        self.maxParticipants = record[FieldKey.maxParticipants.rawValue] as? Int ?? 10
-        self.createdAt = record[FieldKey.createdAt.rawValue] as? Date ?? record.creationDate ?? Date()
+    /// Convert to Firestore data dictionary
+    func toFirestore() -> [String: Any] {
+        return [
+            "id": id,
+            "name": name,
+            "description": description,
+            "createdByUserId": createdByUserId,
+            "startDate": Timestamp(date: startDate),
+            "endDate": Timestamp(date: endDate),
+            "maxParticipants": maxParticipants,
+            "createdAt": Timestamp(date: createdAt)
+        ]
     }
     
-    /// Convert to a CloudKit record
-    func toRecord() -> CKRecord {
-        let recordID = CKRecord.ID(recordName: id)
-        let record = CKRecord(recordType: ChallengeRecordType, recordID: recordID)
+    /// Initialize from Firestore document
+    init?(from document: DocumentSnapshot) {
+        guard let data = document.data() else { return nil }
         
-        record[FieldKey.name.rawValue] = name
-        record[FieldKey.description.rawValue] = description
+        self.id = document.documentID
+        self.name = data["name"] as? String ?? "Unnamed Challenge"
+        self.description = data["description"] as? String ?? ""
+        self.createdByUserId = data["createdByUserId"] as? String ?? ""
         
-        // Create reference to user
-        let userRecordID = CKRecord.ID(recordName: createdByUserRef)
-        record[FieldKey.createdByUserRef.rawValue] = CKRecord.Reference(recordID: userRecordID, action: .none)
+        if let timestamp = data["startDate"] as? Timestamp {
+            self.startDate = timestamp.dateValue()
+        } else {
+            self.startDate = Date()
+        }
         
-        record[FieldKey.startDate.rawValue] = startDate
-        record[FieldKey.endDate.rawValue] = endDate
-        record[FieldKey.maxParticipants.rawValue] = maxParticipants
-        record[FieldKey.createdAt.rawValue] = createdAt
+        if let timestamp = data["endDate"] as? Timestamp {
+            self.endDate = timestamp.dateValue()
+        } else {
+            self.endDate = Date()
+        }
         
-        return record
+        self.maxParticipants = data["maxParticipants"] as? Int ?? 10
+        
+        if let timestamp = data["createdAt"] as? Timestamp {
+            self.createdAt = timestamp.dateValue()
+        } else {
+            self.createdAt = Date()
+        }
     }
 }
 
@@ -141,9 +144,8 @@ extension Challenge {
     static let sample = Challenge(
         name: "November Pushup Duel",
         description: "30 days of push-ups with friends!",
-        createdByUserRef: AppUser.sample.id,
+        createdByUserId: AppUser.sample.id,
         startDate: Date(),
         endDate: Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     )
 }
-
