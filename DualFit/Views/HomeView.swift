@@ -66,7 +66,7 @@ struct HomeView: View {
         }
         .task {
             if let user = appViewModel.currentUser {
-                await viewModel.loadChallenges(userID: user.id)
+                await viewModel.loadChallenges(userId: user.id)
             }
         }
     }

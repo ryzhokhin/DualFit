@@ -266,6 +266,6 @@ struct LeaderboardRow: View {
 // MARK: - Preview
 
 #Preview {
-    LeaderboardView(viewModel: LeaderboardViewModel(challengeID: "test", currentUserID: "user"))
+    LeaderboardView(viewModel: LeaderboardViewModel(challengeId: "test", currentUserId: "user"))
 }
 

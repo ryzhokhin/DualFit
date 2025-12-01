@@ -302,6 +302,6 @@ struct ExerciseRow: View {
 // MARK: - Preview
 
 #Preview {
-    TodayView(viewModel: TodayViewModel(challengeID: "test", currentUserID: "user"))
+    TodayView(viewModel: TodayViewModel(challengeId: "test", currentUserId: "user"))
 }
 
