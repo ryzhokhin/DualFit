@@ -1,0 +1,504 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D0000001 /* DualFitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000101 /* DualFitApp.swift */; };
+		D0000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D0000102 /* Assets.xcassets */; };
+		D0000003 /* AppUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000103 /* AppUser.swift */; };
+		D0000004 /* Challenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000104 /* Challenge.swift */; };
+		D0000005 /* ChallengeExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000105 /* ChallengeExercise.swift */; };
+		D0000006 /* ChallengeParticipant.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000106 /* ChallengeParticipant.swift */; };
+		D0000007 /* ExerciseSubmission.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000107 /* ExerciseSubmission.swift */; };
+		D0000008 /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000108 /* CloudKitManager.swift */; };
+		D0000009 /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000109 /* UserService.swift */; };
+		D0000010 /* ChallengeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000110 /* ChallengeService.swift */; };
+		D0000011 /* SubmissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000111 /* SubmissionService.swift */; };
+		D0000012 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000112 /* AppViewModel.swift */; };
+		D0000013 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000113 /* HomeViewModel.swift */; };
+		D0000014 /* CreateChallengeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000114 /* CreateChallengeViewModel.swift */; };
+		D0000015 /* JoinChallengeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000115 /* JoinChallengeViewModel.swift */; };
+		D0000016 /* ChallengeDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000116 /* ChallengeDetailViewModel.swift */; };
+		D0000017 /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000117 /* TodayViewModel.swift */; };
+		D0000018 /* ReviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000118 /* ReviewViewModel.swift */; };
+		D0000019 /* CalendarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000119 /* CalendarViewModel.swift */; };
+		D0000020 /* LeaderboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000120 /* LeaderboardViewModel.swift */; };
+		D0000021 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000121 /* RootView.swift */; };
+		D0000022 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000122 /* OnboardingView.swift */; };
+		D0000023 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000123 /* HomeView.swift */; };
+		D0000024 /* CreateChallengeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000124 /* CreateChallengeView.swift */; };
+		D0000025 /* JoinChallengeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000125 /* JoinChallengeView.swift */; };
+		D0000026 /* ChallengeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000126 /* ChallengeDetailView.swift */; };
+		D0000027 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000127 /* TodayView.swift */; };
+		D0000028 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000128 /* ReviewView.swift */; };
+		D0000029 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000129 /* CalendarView.swift */; };
+		D0000030 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000130 /* LeaderboardView.swift */; };
+		D0000031 /* VideoCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000131 /* VideoCompressor.swift */; };
+		D0000032 /* DateExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000132 /* DateExtensions.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		D0000100 /* DualFit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DualFit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0000101 /* DualFitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualFitApp.swift; sourceTree = "<group>"; };
+		D0000102 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D0000103 /* AppUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUser.swift; sourceTree = "<group>"; };
+		D0000104 /* Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Challenge.swift; sourceTree = "<group>"; };
+		D0000105 /* ChallengeExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeExercise.swift; sourceTree = "<group>"; };
+		D0000106 /* ChallengeParticipant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeParticipant.swift; sourceTree = "<group>"; };
+		D0000107 /* ExerciseSubmission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseSubmission.swift; sourceTree = "<group>"; };
+		D0000108 /* CloudKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitManager.swift; sourceTree = "<group>"; };
+		D0000109 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
+		D0000110 /* ChallengeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeService.swift; sourceTree = "<group>"; };
+		D0000111 /* SubmissionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmissionService.swift; sourceTree = "<group>"; };
+		D0000112 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		D0000113 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		D0000114 /* CreateChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateChallengeViewModel.swift; sourceTree = "<group>"; };
+		D0000115 /* JoinChallengeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinChallengeViewModel.swift; sourceTree = "<group>"; };
+		D0000116 /* ChallengeDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeDetailViewModel.swift; sourceTree = "<group>"; };
+		D0000117 /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayViewModel.swift; sourceTree = "<group>"; };
+		D0000118 /* ReviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewViewModel.swift; sourceTree = "<group>"; };
+		D0000119 /* CalendarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViewModel.swift; sourceTree = "<group>"; };
+		D0000120 /* LeaderboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardViewModel.swift; sourceTree = "<group>"; };
+		D0000121 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		D0000122 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		D0000123 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		D0000124 /* CreateChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateChallengeView.swift; sourceTree = "<group>"; };
+		D0000125 /* JoinChallengeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinChallengeView.swift; sourceTree = "<group>"; };
+		D0000126 /* ChallengeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeDetailView.swift; sourceTree = "<group>"; };
+		D0000127 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		D0000128 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
+		D0000129 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		D0000130 /* LeaderboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardView.swift; sourceTree = "<group>"; };
+		D0000131 /* VideoCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCompressor.swift; sourceTree = "<group>"; };
+		D0000132 /* DateExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtensions.swift; sourceTree = "<group>"; };
+		D0000133 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D0000134 /* DualFit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DualFit.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D0000200 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D0000300 = {
+			isa = PBXGroup;
+			children = (
+				D0000301 /* DualFit */,
+				D0000302 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D0000301 /* DualFit */ = {
+			isa = PBXGroup;
+			children = (
+				D0000101 /* DualFitApp.swift */,
+				D0000303 /* Models */,
+				D0000304 /* Services */,
+				D0000305 /* ViewModels */,
+				D0000306 /* Views */,
+				D0000307 /* Utilities */,
+				D0000102 /* Assets.xcassets */,
+				D0000133 /* Info.plist */,
+				D0000134 /* DualFit.entitlements */,
+			);
+			path = DualFit;
+			sourceTree = "<group>";
+		};
+		D0000302 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D0000100 /* DualFit.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D0000303 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				D0000103 /* AppUser.swift */,
+				D0000104 /* Challenge.swift */,
+				D0000105 /* ChallengeExercise.swift */,
+				D0000106 /* ChallengeParticipant.swift */,
+				D0000107 /* ExerciseSubmission.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		D0000304 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				D0000108 /* CloudKitManager.swift */,
+				D0000109 /* UserService.swift */,
+				D0000110 /* ChallengeService.swift */,
+				D0000111 /* SubmissionService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D0000305 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				D0000112 /* AppViewModel.swift */,
+				D0000113 /* HomeViewModel.swift */,
+				D0000114 /* CreateChallengeViewModel.swift */,
+				D0000115 /* JoinChallengeViewModel.swift */,
+				D0000116 /* ChallengeDetailViewModel.swift */,
+				D0000117 /* TodayViewModel.swift */,
+				D0000118 /* ReviewViewModel.swift */,
+				D0000119 /* CalendarViewModel.swift */,
+				D0000120 /* LeaderboardViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		D0000306 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				D0000121 /* RootView.swift */,
+				D0000122 /* OnboardingView.swift */,
+				D0000123 /* HomeView.swift */,
+				D0000124 /* CreateChallengeView.swift */,
+				D0000125 /* JoinChallengeView.swift */,
+				D0000126 /* ChallengeDetailView.swift */,
+				D0000127 /* TodayView.swift */,
+				D0000128 /* ReviewView.swift */,
+				D0000129 /* CalendarView.swift */,
+				D0000130 /* LeaderboardView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D0000307 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				D0000131 /* VideoCompressor.swift */,
+				D0000132 /* DateExtensions.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D0000400 /* DualFit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D0000500 /* Build configuration list for PBXNativeTarget "DualFit" */;
+			buildPhases = (
+				D0000401 /* Sources */,
+				D0000200 /* Frameworks */,
+				D0000402 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DualFit;
+			productName = DualFit;
+			productReference = D0000100 /* DualFit.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D0000600 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					D0000400 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = D0000601 /* Build configuration list for PBXProject "DualFit" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D0000300;
+			productRefGroup = D0000302 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D0000400 /* DualFit */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D0000402 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D0000002 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D0000401 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D0000001 /* DualFitApp.swift in Sources */,
+				D0000003 /* AppUser.swift in Sources */,
+				D0000004 /* Challenge.swift in Sources */,
+				D0000005 /* ChallengeExercise.swift in Sources */,
+				D0000006 /* ChallengeParticipant.swift in Sources */,
+				D0000007 /* ExerciseSubmission.swift in Sources */,
+				D0000008 /* CloudKitManager.swift in Sources */,
+				D0000009 /* UserService.swift in Sources */,
+				D0000010 /* ChallengeService.swift in Sources */,
+				D0000011 /* SubmissionService.swift in Sources */,
+				D0000012 /* AppViewModel.swift in Sources */,
+				D0000013 /* HomeViewModel.swift in Sources */,
+				D0000014 /* CreateChallengeViewModel.swift in Sources */,
+				D0000015 /* JoinChallengeViewModel.swift in Sources */,
+				D0000016 /* ChallengeDetailViewModel.swift in Sources */,
+				D0000017 /* TodayViewModel.swift in Sources */,
+				D0000018 /* ReviewViewModel.swift in Sources */,
+				D0000019 /* CalendarViewModel.swift in Sources */,
+				D0000020 /* LeaderboardViewModel.swift in Sources */,
+				D0000021 /* RootView.swift in Sources */,
+				D0000022 /* OnboardingView.swift in Sources */,
+				D0000023 /* HomeView.swift in Sources */,
+				D0000024 /* CreateChallengeView.swift in Sources */,
+				D0000025 /* JoinChallengeView.swift in Sources */,
+				D0000026 /* ChallengeDetailView.swift in Sources */,
+				D0000027 /* TodayView.swift in Sources */,
+				D0000028 /* ReviewView.swift in Sources */,
+				D0000029 /* CalendarView.swift in Sources */,
+				D0000030 /* LeaderboardView.swift in Sources */,
+				D0000031 /* VideoCompressor.swift in Sources */,
+				D0000032 /* DateExtensions.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D0000700 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D0000701 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D0000702 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = DualFit/DualFit.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DualFit/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DualFit;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.DualFit;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D0000703 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = DualFit/DualFit.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DualFit/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DualFit;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.DualFit;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D0000500 /* Build configuration list for PBXNativeTarget "DualFit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0000702 /* Debug */,
+				D0000703 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D0000601 /* Build configuration list for PBXProject "DualFit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0000700 /* Debug */,
+				D0000701 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D0000600 /* Project object */;
+}
+
