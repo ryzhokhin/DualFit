@@ -149,7 +149,7 @@ struct CreateChallengeView: View {
                 Button {
                     guard let userID = appViewModel.currentUser?.id else { return }
                     Task {
-                        await viewModel.createChallenge(creatorUserID: userID)
+                        await viewModel.createChallenge(creatorUserId: userID)
                     }
                 } label: {
                     HStack {

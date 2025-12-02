@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF7F74432EDECF7800B6872D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BF7F74422EDECF7800B6872D /* GoogleService-Info.plist */; };
+		BF7F74462EDECFFB00B6872D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = BF7F74452EDECFFB00B6872D /* FirebaseAuth */; };
+		BF7F74482EDECFFB00B6872D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = BF7F74472EDECFFB00B6872D /* FirebaseFirestore */; };
+		BF7F744A2EDECFFB00B6872D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = BF7F74492EDECFFB00B6872D /* FirebaseStorage */; };
 		D0000001 /* DualFitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000101 /* DualFitApp.swift */; };
 		D0000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D0000102 /* Assets.xcassets */; };
 		D0000003 /* AppUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000103 /* AppUser.swift */; };
@@ -42,6 +46,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BF7F74422EDECF7800B6872D /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D0000100 /* DualFit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DualFit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0000101 /* DualFitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualFitApp.swift; sourceTree = "<group>"; };
 		D0000102 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -84,6 +89,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF7F74462EDECFFB00B6872D /* FirebaseAuth in Frameworks */,
+				BF7F74482EDECFFB00B6872D /* FirebaseFirestore in Frameworks */,
+				BF7F744A2EDECFFB00B6872D /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,6 +118,7 @@
 				D0000102 /* Assets.xcassets */,
 				D0000133 /* Info.plist */,
 				D0000134 /* DualFit.entitlements */,
+				BF7F74422EDECF7800B6872D /* GoogleService-Info.plist */,
 			);
 			path = DualFit;
 			sourceTree = "<group>";
@@ -231,6 +240,9 @@
 				Base,
 			);
 			mainGroup = D0000300;
+			packageReferences = (
+				BF7F74442EDECFFB00B6872D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			productRefGroup = D0000302 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -246,6 +258,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D0000002 /* Assets.xcassets in Resources */,
+				BF7F74432EDECF7800B6872D /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,7 +275,7 @@
 				D0000005 /* ChallengeExercise.swift in Sources */,
 				D0000006 /* ChallengeParticipant.swift in Sources */,
 				D0000007 /* ExerciseSubmission.swift in Sources */,
-				D0000008 /* CloudKitManager.swift in Sources */,
+				D0000008 /* AuthService.swift in Sources */,
 				D0000009 /* UserService.swift in Sources */,
 				D0000010 /* ChallengeService.swift in Sources */,
 				D0000011 /* SubmissionService.swift in Sources */,
@@ -420,15 +433,17 @@
 				CODE_SIGN_ENTITLEMENTS = DualFit/DualFit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = ZVA96G6M7U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DualFit/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = DualFit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSCameraUsageDescription = "DualFit needs camera access to record exercise videos for proof of completion.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "DualFit needs microphone access to record audio with your exercise videos.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "DualFit needs access to your photo library to select exercise videos for proof of completion.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -436,7 +451,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.DualFit;
+				PRODUCT_BUNDLE_IDENTIFIER = NoonFog.DualFit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -452,15 +467,17 @@
 				CODE_SIGN_ENTITLEMENTS = DualFit/DualFit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = ZVA96G6M7U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DualFit/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = DualFit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSCameraUsageDescription = "DualFit needs camera access to record exercise videos for proof of completion.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "DualFit needs microphone access to record audio with your exercise videos.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "DualFit needs access to your photo library to select exercise videos for proof of completion.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -468,7 +485,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.DualFit;
+				PRODUCT_BUNDLE_IDENTIFIER = NoonFog.DualFit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -498,7 +515,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BF7F74442EDECFFB00B6872D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BF7F74452EDECFFB00B6872D /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF7F74442EDECFFB00B6872D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		BF7F74472EDECFFB00B6872D /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF7F74442EDECFFB00B6872D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		BF7F74492EDECFFB00B6872D /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF7F74442EDECFFB00B6872D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D0000600 /* Project object */;
 }
-

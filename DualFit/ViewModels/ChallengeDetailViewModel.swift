@@ -80,12 +80,12 @@ class ChallengeDetailViewModel: ObservableObject {
             participants = try await challengeService.fetchParticipantUsers(forChallengeId: challenge.id)
             
             // Update child view models with shared data
-            await todayViewModel.setExercises(exercises)
-            await reviewViewModel.setExercises(exercises)
-            await reviewViewModel.setParticipants(participants)
-            await calendarViewModel.setExercises(exercises)
-            await calendarViewModel.setChallenge(challenge)
-            await leaderboardViewModel.setParticipants(participants)
+            todayViewModel.setExercises(exercises)
+            reviewViewModel.setExercises(exercises)
+            reviewViewModel.setParticipants(participants)
+            calendarViewModel.setExercises(exercises)
+            calendarViewModel.setChallenge(challenge)
+            leaderboardViewModel.setParticipants(participants)
             
             // Load data for each tab
             await loadTabData()
@@ -140,3 +140,4 @@ class ChallengeDetailViewModel: ObservableObject {
         errorMessage = nil
     }
 }
+

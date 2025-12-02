@@ -17,7 +17,7 @@ struct ChallengeDetailView: View {
         let userID = "" // Will be set properly in task
         _viewModel = StateObject(wrappedValue: ChallengeDetailViewModel(
             challenge: challenge,
-            currentUserID: userID
+            currentUserId: userID
         ))
     }
     
@@ -62,20 +62,20 @@ struct ChallengeDetailView: View {
                 // Reinitialize view model with proper user ID
                 await MainActor.run {
                     viewModel.todayViewModel = TodayViewModel(
-                        challengeID: viewModel.challenge.id,
-                        currentUserID: userID
+                        challengeId: viewModel.challenge.id,
+                        currentUserId: userID
                     )
                     viewModel.reviewViewModel = ReviewViewModel(
-                        challengeID: viewModel.challenge.id,
-                        currentUserID: userID
+                        challengeId: viewModel.challenge.id,
+                        currentUserId: userID
                     )
                     viewModel.calendarViewModel = CalendarViewModel(
-                        challengeID: viewModel.challenge.id,
-                        currentUserID: userID
+                        challengeId: viewModel.challenge.id,
+                        currentUserId: userID
                     )
                     viewModel.leaderboardViewModel = LeaderboardViewModel(
-                        challengeID: viewModel.challenge.id,
-                        currentUserID: userID
+                        challengeId: viewModel.challenge.id,
+                        currentUserId: userID
                     )
                 }
                 await viewModel.loadData()

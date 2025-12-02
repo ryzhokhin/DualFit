@@ -372,6 +372,6 @@ struct DayDetailSheet: View {
 // MARK: - Preview
 
 #Preview {
-    CalendarView(viewModel: CalendarViewModel(challengeID: "test", currentUserID: "user"))
+    CalendarView(viewModel: CalendarViewModel(challengeId: "test", currentUserId: "user"))
 }
 

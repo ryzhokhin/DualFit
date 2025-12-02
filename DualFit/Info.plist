@@ -2,12 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>DualFit needs access to your photo library to select exercise videos for proof of completion.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>DualFit needs camera access to record exercise videos for proof of completion.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>DualFit needs microphone access to record audio with your exercise videos.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
@@ -15,4 +9,3 @@
 	</dict>
 </dict>
 </plist>
-

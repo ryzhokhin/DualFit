@@ -148,7 +148,7 @@ struct JoinChallengeView: View {
             Button {
                 guard let userID = appViewModel.currentUser?.id else { return }
                 Task {
-                    await viewModel.joinChallenge(userID: userID)
+                    await viewModel.joinChallenge(userId: userID)
                 }
             } label: {
                 HStack {
