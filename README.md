@@ -1,14 +1,14 @@
 # DualFit 💪
 
-A daily exercise challenge app for small groups of friends (2-10 people) built with **SwiftUI** and **CloudKit**.
+A daily exercise challenge app for small groups of friends (2-10 people) built with **SwiftUI** and **Firebase**.
 
 ![iOS 17+](https://img.shields.io/badge/iOS-17%2B-blue)
 ![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange)
-![CloudKit](https://img.shields.io/badge/Backend-CloudKit-green)
+![Firebase](https://img.shields.io/badge/Backend-Firebase-yellow)
 
 ## Overview
 
-DualFit is an accountability app where you and your friends create daily fitness challenges, submit video proof of your exercises, and verify each other's progress. The app is designed to be cheap to operate using only Apple's free CloudKit tier, and automatically deletes videos after they're reviewed to minimize storage costs.
+DualFit is an accountability app where you and your friends create daily fitness challenges, submit video proof of your exercises, and verify each other's progress. The app uses Firebase (Firestore + Storage + Auth) for the backend, which works with Apple's free Personal Team.
 
 ### Key Features
 
@@ -19,26 +19,22 @@ DualFit is an accountability app where you and your friends create daily fitness
 - 🏆 **Leaderboard** - Compete with friends to see who's winning the challenge
 - 🔗 **Easy Joining** - Share a simple code for friends to join your challenge
 
-## Screenshots
-
-(Add screenshots here after building the app)
-
 ## Architecture
 
 ```
 DualFit/
-├── DualFitApp.swift         # App entry point
-├── Models/                   # CloudKit-backed data models
+├── DualFitApp.swift         # App entry point with Firebase config
+├── Models/                   # Firestore-backed data models
 │   ├── AppUser.swift
 │   ├── Challenge.swift
 │   ├── ChallengeExercise.swift
 │   ├── ChallengeParticipant.swift
 │   └── ExerciseSubmission.swift
-├── Services/                 # CloudKit operations
-│   ├── CloudKitManager.swift
-│   ├── UserService.swift
-│   ├── ChallengeService.swift
-│   └── SubmissionService.swift
+├── Services/                 # Firebase operations
+│   ├── AuthService.swift     # Firebase Anonymous Auth
+│   ├── UserService.swift     # Firestore user operations
+│   ├── ChallengeService.swift # Firestore challenge operations
+│   └── SubmissionService.swift # Firestore + Storage operations
 ├── ViewModels/               # MVVM view models
 │   ├── AppViewModel.swift
 │   ├── HomeViewModel.swift
@@ -65,132 +61,153 @@ DualFit/
     └── DateExtensions.swift
 ```
 
+## Firebase Data Model
+
+```
+Firestore Collections:
+├── users/{userId}                          # AppUser documents
+└── challenges/{challengeId}                # Challenge documents
+    ├── exercises/{exerciseId}              # ChallengeExercise subcollection
+    ├── participants/{participantId}        # ChallengeParticipant subcollection
+    └── submissions/{submissionId}          # ExerciseSubmission subcollection
+
+Firebase Storage:
+└── videos/{challengeId}/{userId}/{date}/{exerciseId}.mp4
+```
+
 ## Setup Instructions
 
 ### Prerequisites
 
 - Xcode 15+ 
 - iOS 17+ device or simulator
-- Apple Developer account (free tier works)
-- iCloud account (for testing)
+- Apple Developer account (free Personal Team works!)
+- Firebase account (free tier)
 
-### Step 1: Create Xcode Project
+### Step 1: Create Firebase Project
 
-1. Open Xcode
-2. Create a new project: **File → New → Project**
-3. Select **iOS → App**
-4. Configure:
-   - Product Name: `DualFit`
-   - Team: Your Apple Developer team
-   - Organization Identifier: Your identifier (e.g., `com.yourname`)
-   - Interface: **SwiftUI**
-   - Language: **Swift**
-   - Storage: **None** (we'll use CloudKit)
-5. Choose a location and create the project
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Click **Add project**
+3. Name it (e.g., "DualFit")
+4. Disable Google Analytics (optional for this app)
+5. Click **Create project**
 
-### Step 2: Add Source Files
+### Step 2: Configure Firebase Services
 
-1. Delete the default `ContentView.swift` file
-2. Copy all the Swift files from this repository into your Xcode project:
-   - Drag the `Models`, `Services`, `ViewModels`, `Views`, and `Utilities` folders into your project
-   - Replace `DualFitApp.swift` with the one from this repo
-3. Copy the `Assets.xcassets` folder contents
-4. Copy `Info.plist` and `DualFit.entitlements`
+#### Enable Authentication:
+1. Go to **Build → Authentication**
+2. Click **Get started**
+3. Go to **Sign-in method** tab
+4. Enable **Anonymous** sign-in
 
-### Step 3: Configure CloudKit
+#### Enable Firestore:
+1. Go to **Build → Firestore Database**
+2. Click **Create database**
+3. Select **Start in test mode** (we'll secure it later)
+4. Choose a location close to your users
+5. Click **Enable**
 
-1. Select your project in the navigator
-2. Select the **DualFit** target
-3. Go to **Signing & Capabilities**
-4. Click **+ Capability** and add:
-   - **iCloud**
-5. In the iCloud capability:
-   - Check **CloudKit**
-   - Under Containers, click the **+** button
-   - Create a container named: `iCloud.com.yourteam.DualFit` (use your actual bundle ID)
+#### Enable Storage:
+1. Go to **Build → Storage**
+2. Click **Get started**
+3. Select **Start in test mode**
+4. Click **Next** and **Done**
 
-### Step 4: Set Up CloudKit Schema
+### Step 3: Add iOS App to Firebase
 
-1. Open the [CloudKit Dashboard](https://icloud.developer.apple.com/dashboard/)
-2. Select your container
-3. Go to **Schema** → **Record Types**
-4. Create these record types (or they'll be auto-created on first save):
+1. In Firebase Console, click the **iOS+** button
+2. Enter your Bundle ID (e.g., `com.yourname.DualFit`)
+3. Download `GoogleService-Info.plist`
+4. Click through the remaining steps (we'll add the SDK via SPM)
 
-#### AppUser
-| Field | Type |
-|-------|------|
-| icloudUserRecordID | String |
-| displayName | String |
-| avatarEmoji | String |
-| createdAt | Date/Time |
+### Step 4: Open the Xcode Project
 
-#### Challenge
-| Field | Type |
-|-------|------|
-| name | String |
-| description | String |
-| createdByUserRef | Reference → AppUser |
-| startDate | Date/Time |
-| endDate | Date/Time |
-| maxParticipants | Int(64) |
-| createdAt | Date/Time |
-
-#### ChallengeExercise
-| Field | Type |
-|-------|------|
-| challengeRef | Reference → Challenge |
-| name | String |
-| dailyRequiredReps | Int(64) |
-| order | Int(64) |
-
-#### ChallengeParticipant
-| Field | Type |
-|-------|------|
-| challengeRef | Reference → Challenge |
-| userRef | Reference → AppUser |
-| joinedAt | Date/Time |
-
-#### ExerciseSubmission
-| Field | Type |
-|-------|------|
-| challengeRef | Reference → Challenge |
-| exerciseRef | Reference → ChallengeExercise |
-| userRef | Reference → AppUser |
-| date | Date/Time |
-| videoAsset | Asset |
-| status | String |
-| reviewerRef | Reference → AppUser |
-| reviewedAt | Date/Time |
-| videoDeleted | Int(64) |
-| pointsAwarded | Int(64) |
-| createdAt | Date/Time |
-| updatedAt | Date/Time |
-
-5. Add indexes for queryable fields:
-   - AppUser: `icloudUserRecordID` (Queryable)
-   - Challenge: all reference fields (Queryable)
-   - ChallengeExercise: `challengeRef` (Queryable)
-   - ChallengeParticipant: `challengeRef`, `userRef` (Queryable)
-   - ExerciseSubmission: `challengeRef`, `userRef`, `exerciseRef`, `status`, `date` (Queryable, Sortable)
-
-### Step 5: Configure Info.plist
-
-Ensure your `Info.plist` contains these privacy descriptions:
-
-```xml
-<key>NSPhotoLibraryUsageDescription</key>
-<string>DualFit needs access to your photo library to select exercise videos for proof of completion.</string>
-<key>NSCameraUsageDescription</key>
-<string>DualFit needs camera access to record exercise videos for proof of completion.</string>
-<key>NSMicrophoneUsageDescription</key>
-<string>DualFit needs microphone access to record audio with your exercise videos.</string>
+```bash
+open DualFit.xcodeproj
 ```
 
-### Step 6: Build and Run
+### Step 5: Add Firebase SDK via Swift Package Manager
+
+1. In Xcode, go to **File → Add Package Dependencies**
+2. Enter: `https://github.com/firebase/firebase-ios-sdk`
+3. Select version **11.0.0** or later
+4. Add these packages to your target:
+   - `FirebaseAuth`
+   - `FirebaseFirestore`
+   - `FirebaseStorage`
+
+### Step 6: Add GoogleService-Info.plist
+
+1. Drag the downloaded `GoogleService-Info.plist` into the `DualFit` folder in Xcode
+2. Make sure "Copy items if needed" is checked
+3. Ensure it's added to the DualFit target
+
+### Step 7: Configure Signing
+
+1. Select the project in the navigator
+2. Select the **DualFit** target
+3. Go to **Signing & Capabilities**
+4. Select your **Personal Team**
+5. Change the Bundle Identifier if needed to make it unique
+
+### Step 8: Build and Run
 
 1. Select a device or simulator running iOS 17+
-2. Make sure you're signed into iCloud on the device/simulator
-3. Build and run (⌘R)
+2. Build and run (⌘R)
+
+## Firebase Security Rules
+
+Once you're ready for production, update your security rules:
+
+### Firestore Rules
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read/write their own profile
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Challenges are readable by participants
+    match /challenges/{challengeId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      
+      // Subcollections
+      match /exercises/{exerciseId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
+      }
+      
+      match /participants/{participantId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
+      }
+      
+      match /submissions/{submissionId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
+      }
+    }
+  }
+}
+```
+
+### Storage Rules
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /videos/{challengeId}/{userId}/{date}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null;
+    }
+  }
+}
+```
 
 ## Usage
 
@@ -227,10 +244,11 @@ Ensure your `Info.plist` contains these privacy descriptions:
 
 ## Cost Considerations
 
-This app is designed to run on CloudKit's free tier:
-- **10 GB asset storage**
-- **100 MB database storage**
-- **2 GB data transfer/day**
+Firebase free tier (Spark plan) includes:
+- **1 GiB Firestore storage**
+- **5 GB Storage**
+- **50K/day Firestore reads**
+- **20K/day Firestore writes**
 
 To stay within limits:
 - Videos are deleted immediately after review
@@ -243,7 +261,18 @@ To stay within limits:
 - Videos must be under 60 seconds
 - Maximum 10 participants per challenge
 - Maximum 10 exercises per challenge
-- Using iCloud authentication (no email/password)
+- Using Anonymous authentication
+
+## Troubleshooting
+
+### "Missing GoogleService-Info.plist"
+Make sure the file is added to your Xcode project and included in the target.
+
+### "Permission denied" errors
+Check that you've enabled the Firebase services and are using test mode rules.
+
+### Video upload fails
+Ensure Firebase Storage is enabled and the rules allow writes.
 
 ## Future Improvements
 
@@ -253,6 +282,7 @@ To stay within limits:
 - [ ] Challenge templates
 - [ ] Streak tracking and badges
 - [ ] Deep linking for join codes
+- [ ] Email/password authentication option
 
 ## License
 
@@ -261,4 +291,3 @@ MIT License - feel free to use this code for your own projects!
 ## Contributing
 
 Pull requests are welcome! Please open an issue first to discuss proposed changes.
-

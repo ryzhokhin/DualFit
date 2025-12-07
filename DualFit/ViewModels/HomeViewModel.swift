@@ -39,34 +39,34 @@ class HomeViewModel: ObservableObject {
     private let challengeService = ChallengeService.shared
     private let submissionService = SubmissionService.shared
     
-    private var currentUserID: String?
+    private var currentUserId: String?
     
     // MARK: - Public Methods
     
     /// Load challenges for the current user
-    func loadChallenges(userID: String) async {
-        currentUserID = userID
+    func loadChallenges(userId: String) async {
+        currentUserId = userId
         isLoading = true
         errorMessage = nil
         
         do {
-            let fetchedChallenges = try await challengeService.fetchChallenges(forUserID: userID)
+            let fetchedChallenges = try await challengeService.fetchChallenges(forUserId: userId)
             
             // Build summaries with stats
             var summaries: [ChallengeSummary] = []
             
             for challenge in fetchedChallenges {
                 // Get participant count
-                let participants = try await challengeService.fetchParticipants(forChallengeID: challenge.id)
+                let participants = try await challengeService.fetchParticipants(forChallengeId: challenge.id)
                 
                 // Get exercises
-                let exercises = try await challengeService.fetchExercises(forChallengeID: challenge.id)
+                let exercises = try await challengeService.fetchExercises(forChallengeId: challenge.id)
                 let exerciseCount = exercises.count
                 
                 // Get completion status
                 let statuses = try await submissionService.getCompletionStatus(
-                    challengeID: challenge.id,
-                    userID: userID,
+                    challengeId: challenge.id,
+                    userId: userId,
                     exerciseCount: exerciseCount,
                     startDate: challenge.startDate,
                     endDate: min(challenge.endDate, Date())
@@ -76,8 +76,8 @@ class HomeViewModel: ObservableObject {
                 let completedDays = statuses.filter { $0.status == .complete }.count
                 
                 // Calculate total points
-                let submissions = try await submissionService.fetchAllSubmissions(forChallengeID: challenge.id)
-                let userSubmissions = submissions.filter { $0.userRef == userID && $0.status == .approved }
+                let submissions = try await submissionService.fetchAllSubmissions(forChallengeId: challenge.id)
+                let userSubmissions = submissions.filter { $0.userId == userId && $0.status == .approved }
                 let totalPoints = userSubmissions.reduce(0) { $0 + $1.pointsAwarded }
                 
                 let summary = ChallengeSummary(
@@ -102,8 +102,8 @@ class HomeViewModel: ObservableObject {
     
     /// Refresh challenges
     func refresh() async {
-        guard let userID = currentUserID else { return }
-        await loadChallenges(userID: userID)
+        guard let userId = currentUserId else { return }
+        await loadChallenges(userId: userId)
     }
     
     /// Clear error message
@@ -111,4 +111,3 @@ class HomeViewModel: ObservableObject {
         errorMessage = nil
     }
 }
-

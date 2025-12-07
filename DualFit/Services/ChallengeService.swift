@@ -2,11 +2,11 @@
 //  ChallengeService.swift
 //  DualFit
 //
-//  Handles challenge-related operations.
+//  Handles challenge-related Firestore operations.
 //
 
 import Foundation
-import CloudKit
+import FirebaseFirestore
 
 /// Errors specific to challenge operations
 enum ChallengeError: LocalizedError {
@@ -15,6 +15,8 @@ enum ChallengeError: LocalizedError {
     case alreadyJoined
     case invalidJoinCode
     case notParticipant
+    case saveFailed(Error)
+    case fetchFailed(Error)
     
     var errorDescription: String? {
         switch self {
@@ -28,19 +30,27 @@ enum ChallengeError: LocalizedError {
             return "Invalid join code. Please check and try again."
         case .notParticipant:
             return "You are not a participant in this challenge."
+        case .saveFailed(let error):
+            return "Failed to save: \(error.localizedDescription)"
+        case .fetchFailed(let error):
+            return "Failed to fetch: \(error.localizedDescription)"
         }
     }
 }
 
-/// Service for managing challenges
-actor ChallengeService {
+/// Service for managing challenges in Firestore
+class ChallengeService {
     // MARK: - Singleton
     
     static let shared = ChallengeService()
     
     // MARK: - Properties
     
-    private let cloudKit = CloudKitManager.shared
+    private let db = Firestore.firestore()
+    
+    private var challengesCollection: CollectionReference {
+        db.collection(ChallengesCollection)
+    }
     
     // MARK: - Initialization
     
@@ -55,13 +65,16 @@ actor ChallengeService {
         startDate: Date,
         endDate: Date,
         exercises: [(name: String, reps: Int)],
-        creatorUserID: String
+        creatorUserId: String
     ) async throws -> (challenge: Challenge, exercises: [ChallengeExercise]) {
+        let challengeId = UUID().uuidString
+        
         // Create the challenge
         let challenge = Challenge(
+            id: challengeId,
             name: name,
             description: description,
-            createdByUserRef: creatorUserID,
+            createdByUserId: creatorUserId,
             startDate: startDate,
             endDate: endDate
         )
@@ -70,7 +83,7 @@ actor ChallengeService {
         var exerciseRecords: [ChallengeExercise] = []
         for (index, exercise) in exercises.enumerated() {
             let challengeExercise = ChallengeExercise(
-                challengeRef: challenge.id,
+                challengeId: challengeId,
                 name: exercise.name,
                 dailyRequiredReps: exercise.reps,
                 order: index
@@ -80,134 +93,133 @@ actor ChallengeService {
         
         // Create participant record for creator
         let participant = ChallengeParticipant(
-            challengeRef: challenge.id,
-            userRef: creatorUserID
+            challengeId: challengeId,
+            userId: creatorUserId
         )
         
-        // Save all records
-        var allRecords: [CKRecord] = [challenge.toRecord()]
-        allRecords.append(contentsOf: exerciseRecords.map { $0.toRecord() })
-        allRecords.append(participant.toRecord())
+        // Use a batch write for atomicity
+        let batch = db.batch()
         
-        _ = try await cloudKit.saveMultiple(records: allRecords)
+        // Add challenge
+        let challengeRef = challengesCollection.document(challengeId)
+        batch.setData(challenge.toFirestore(), forDocument: challengeRef)
         
-        return (challenge, exerciseRecords)
+        // Add exercises
+        for exercise in exerciseRecords {
+            let exerciseRef = challengeRef.collection(ExercisesSubcollection).document(exercise.id)
+            batch.setData(exercise.toFirestore(), forDocument: exerciseRef)
+        }
+        
+        // Add creator as participant
+        let participantRef = challengeRef.collection(ParticipantsSubcollection).document(participant.id)
+        batch.setData(participant.toFirestore(), forDocument: participantRef)
+        
+        do {
+            try await batch.commit()
+            return (challenge, exerciseRecords)
+        } catch {
+            throw ChallengeError.saveFailed(error)
+        }
     }
     
     /// Fetch a challenge by its ID
-    func fetchChallenge(byID challengeID: String) async throws -> Challenge? {
-        let recordID = CKRecord.ID(recordName: challengeID)
-        
+    func fetchChallenge(byId challengeId: String) async throws -> Challenge? {
         do {
-            let record = try await cloudKit.fetch(recordID: recordID)
-            return Challenge(from: record)
-        } catch CloudKitError.recordNotFound {
-            return nil
+            let document = try await challengesCollection.document(challengeId).getDocument()
+            guard document.exists else { return nil }
+            return Challenge(from: document)
+        } catch {
+            throw ChallengeError.fetchFailed(error)
         }
     }
     
     /// Fetch a challenge by join code (first 8 chars of ID)
     func fetchChallenge(byJoinCode joinCode: String) async throws -> Challenge? {
-        // The join code is the first 8 characters of the challenge ID (uppercased)
         let normalizedCode = joinCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
         guard normalizedCode.count >= 6 else {
             throw ChallengeError.invalidJoinCode
         }
         
-        // Fetch all challenges and find the one matching the code
-        // In production, you might want a separate indexed field for this
-        let records = try await cloudKit.fetch(
-            recordType: ChallengeRecordType,
-            resultsLimit: 200
-        )
-        
-        for record in records {
-            let recordName = record.recordID.recordName
-            let recordCode = String(recordName.prefix(8)).uppercased()
-            if recordCode == normalizedCode {
-                return Challenge(from: record)
+        do {
+            // Fetch all challenges and find the one matching the code
+            // Note: For production, consider adding a 'joinCode' field to index
+            let snapshot = try await challengesCollection.getDocuments()
+            
+            for document in snapshot.documents {
+                let recordId = document.documentID
+                let recordCode = String(recordId.prefix(8)).uppercased()
+                if recordCode == normalizedCode {
+                    return Challenge(from: document)
+                }
             }
+            
+            return nil
+        } catch {
+            throw ChallengeError.fetchFailed(error)
         }
-        
-        return nil
     }
     
     /// Fetch all challenges a user participates in
-    func fetchChallenges(forUserID userID: String) async throws -> [Challenge] {
-        // First, get all participant records for this user
-        let userRecordID = CKRecord.ID(recordName: userID)
-        let userRef = CKRecord.Reference(recordID: userRecordID, action: .none)
-        
-        let participantPredicate = NSPredicate(
-            format: "%K == %@",
-            ChallengeParticipant.FieldKey.userRef.rawValue,
-            userRef
-        )
-        
-        let participantRecords = try await cloudKit.fetch(
-            recordType: ChallengeParticipantRecordType,
-            predicate: participantPredicate,
-            resultsLimit: 100
-        )
-        
-        // Extract challenge IDs
-        let challengeIDs = participantRecords.compactMap { record -> String? in
-            guard let ref = record[ChallengeParticipant.FieldKey.challengeRef.rawValue] as? CKRecord.Reference else {
-                return nil
+    func fetchChallenges(forUserId userId: String) async throws -> [Challenge] {
+        do {
+            // Query all challenges and check participation
+            // Note: For production scale, consider a different data model
+            let challengesSnapshot = try await challengesCollection.getDocuments()
+            
+            var userChallenges: [Challenge] = []
+            
+            for challengeDoc in challengesSnapshot.documents {
+                guard let challenge = Challenge(from: challengeDoc) else { continue }
+                
+                // Check if user is a participant
+                let participantsSnapshot = try await challengesCollection
+                    .document(challenge.id)
+                    .collection(ParticipantsSubcollection)
+                    .whereField("userId", isEqualTo: userId)
+                    .getDocuments()
+                
+                if !participantsSnapshot.documents.isEmpty {
+                    userChallenges.append(challenge)
+                }
             }
-            return ref.recordID.recordName
+            
+            // Sort by start date, most recent first
+            return userChallenges.sorted { $0.startDate > $1.startDate }
+        } catch {
+            throw ChallengeError.fetchFailed(error)
         }
-        
-        // Fetch all challenges
-        var challenges: [Challenge] = []
-        for challengeID in challengeIDs {
-            if let challenge = try await fetchChallenge(byID: challengeID) {
-                challenges.append(challenge)
-            }
-        }
-        
-        // Sort by start date, most recent first
-        return challenges.sorted { $0.startDate > $1.startDate }
     }
     
     // MARK: - Exercises
     
     /// Fetch exercises for a challenge
-    func fetchExercises(forChallengeID challengeID: String) async throws -> [ChallengeExercise] {
-        let challengeRecordID = CKRecord.ID(recordName: challengeID)
-        let challengeRef = CKRecord.Reference(recordID: challengeRecordID, action: .none)
-        
-        let predicate = NSPredicate(
-            format: "%K == %@",
-            ChallengeExercise.FieldKey.challengeRef.rawValue,
-            challengeRef
-        )
-        
-        let sortDescriptor = NSSortDescriptor(key: ChallengeExercise.FieldKey.order.rawValue, ascending: true)
-        
-        let records = try await cloudKit.fetch(
-            recordType: ChallengeExerciseRecordType,
-            predicate: predicate,
-            sortDescriptors: [sortDescriptor],
-            resultsLimit: 20
-        )
-        
-        return records.compactMap { ChallengeExercise(from: $0) }
+    func fetchExercises(forChallengeId challengeId: String) async throws -> [ChallengeExercise] {
+        do {
+            let snapshot = try await challengesCollection
+                .document(challengeId)
+                .collection(ExercisesSubcollection)
+                .order(by: "order")
+                .getDocuments()
+            
+            return snapshot.documents.compactMap { ChallengeExercise(from: $0, challengeId: challengeId) }
+        } catch {
+            throw ChallengeError.fetchFailed(error)
+        }
     }
     
     // MARK: - Participants
     
     /// Join a challenge
-    func joinChallenge(challengeID: String, userID: String) async throws -> ChallengeParticipant {
+    func joinChallenge(challengeId: String, userId: String) async throws -> ChallengeParticipant {
         // Check if challenge exists
-        guard let challenge = try await fetchChallenge(byID: challengeID) else {
+        guard let challenge = try await fetchChallenge(byId: challengeId) else {
             throw ChallengeError.challengeNotFound
         }
         
         // Check if already joined
-        let participants = try await fetchParticipants(forChallengeID: challengeID)
-        if participants.contains(where: { $0.userRef == userID }) {
+        let participants = try await fetchParticipants(forChallengeId: challengeId)
+        if participants.contains(where: { $0.userId == userId }) {
             throw ChallengeError.alreadyJoined
         }
         
@@ -218,46 +230,47 @@ actor ChallengeService {
         
         // Create participant record
         let participant = ChallengeParticipant(
-            challengeRef: challengeID,
-            userRef: userID
+            challengeId: challengeId,
+            userId: userId
         )
         
-        _ = try await cloudKit.save(record: participant.toRecord())
-        
-        return participant
+        do {
+            try await challengesCollection
+                .document(challengeId)
+                .collection(ParticipantsSubcollection)
+                .document(participant.id)
+                .setData(participant.toFirestore())
+            
+            return participant
+        } catch {
+            throw ChallengeError.saveFailed(error)
+        }
     }
     
     /// Fetch participants for a challenge
-    func fetchParticipants(forChallengeID challengeID: String) async throws -> [ChallengeParticipant] {
-        let challengeRecordID = CKRecord.ID(recordName: challengeID)
-        let challengeRef = CKRecord.Reference(recordID: challengeRecordID, action: .none)
-        
-        let predicate = NSPredicate(
-            format: "%K == %@",
-            ChallengeParticipant.FieldKey.challengeRef.rawValue,
-            challengeRef
-        )
-        
-        let records = try await cloudKit.fetch(
-            recordType: ChallengeParticipantRecordType,
-            predicate: predicate,
-            resultsLimit: 15
-        )
-        
-        return records.compactMap { ChallengeParticipant(from: $0) }
+    func fetchParticipants(forChallengeId challengeId: String) async throws -> [ChallengeParticipant] {
+        do {
+            let snapshot = try await challengesCollection
+                .document(challengeId)
+                .collection(ParticipantsSubcollection)
+                .getDocuments()
+            
+            return snapshot.documents.compactMap { ChallengeParticipant(from: $0, challengeId: challengeId) }
+        } catch {
+            throw ChallengeError.fetchFailed(error)
+        }
     }
     
     /// Fetch participant users for a challenge (with user details)
-    func fetchParticipantUsers(forChallengeID challengeID: String) async throws -> [AppUser] {
-        let participants = try await fetchParticipants(forChallengeID: challengeID)
-        let userIDs = participants.map { $0.userRef }
-        return try await UserService.shared.fetchUsers(byIDs: userIDs)
+    func fetchParticipantUsers(forChallengeId challengeId: String) async throws -> [AppUser] {
+        let participants = try await fetchParticipants(forChallengeId: challengeId)
+        let userIds = participants.map { $0.userId }
+        return try await UserService.shared.fetchUsers(byIds: userIds)
     }
     
     /// Check if a user is a participant in a challenge
-    func isUserParticipant(userID: String, challengeID: String) async throws -> Bool {
-        let participants = try await fetchParticipants(forChallengeID: challengeID)
-        return participants.contains { $0.userRef == userID }
+    func isUserParticipant(userId: String, challengeId: String) async throws -> Bool {
+        let participants = try await fetchParticipants(forChallengeId: challengeId)
+        return participants.contains { $0.userId == userId }
     }
 }
-

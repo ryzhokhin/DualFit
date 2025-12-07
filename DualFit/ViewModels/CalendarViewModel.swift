@@ -53,8 +53,8 @@ class CalendarViewModel: ObservableObject {
     
     // MARK: - Properties
     
-    private let challengeID: String
-    private let currentUserID: String
+    private let challengeId: String
+    private let currentUserId: String
     private var exercises: [ChallengeExercise] = []
     private var challenge: Challenge?
     
@@ -85,9 +85,9 @@ class CalendarViewModel: ObservableObject {
     
     // MARK: - Initialization
     
-    init(challengeID: String, currentUserID: String) {
-        self.challengeID = challengeID
-        self.currentUserID = currentUserID
+    init(challengeId: String, currentUserId: String) {
+        self.challengeId = challengeId
+        self.currentUserId = currentUserId
     }
     
     // MARK: - Public Methods
@@ -115,8 +115,8 @@ class CalendarViewModel: ObservableObject {
             let endDate = min(challenge.endDate, Date())
             
             completionStatuses = try await submissionService.getCompletionStatus(
-                challengeID: challengeID,
-                userID: currentUserID,
+                challengeId: challengeId,
+                userId: currentUserId,
                 exerciseCount: exercises.count,
                 startDate: startDate,
                 endDate: endDate
@@ -230,4 +230,3 @@ class CalendarViewModel: ObservableObject {
         errorMessage = nil
     }
 }
-

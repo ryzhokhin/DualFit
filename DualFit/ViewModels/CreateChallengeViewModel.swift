@@ -71,7 +71,7 @@ class CreateChallengeViewModel: ObservableObject {
     }
     
     /// Create the challenge
-    func createChallenge(creatorUserID: String) async {
+    func createChallenge(creatorUserId: String) async {
         guard isValid else {
             errorMessage = "Please fill in all required fields."
             return
@@ -89,7 +89,7 @@ class CreateChallengeViewModel: ObservableObject {
                 startDate: startDate.startOfDay,
                 endDate: endDate.startOfDay,
                 exercises: exerciseData,
-                creatorUserID: creatorUserID
+                creatorUserId: creatorUserId
             )
             
             createdChallenge = challenge
@@ -118,4 +118,3 @@ class CreateChallengeViewModel: ObservableObject {
         errorMessage = nil
     }
 }
-

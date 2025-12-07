@@ -2,59 +2,56 @@
 //  UserService.swift
 //  DualFit
 //
-//  Handles user-related operations.
+//  Handles user-related Firestore operations.
 //
 
 import Foundation
-import CloudKit
+import FirebaseFirestore
 
-/// Service for managing app users
-actor UserService {
+/// Errors specific to user operations
+enum UserServiceError: LocalizedError {
+    case userNotFound
+    case saveFailed(Error)
+    case fetchFailed(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .userNotFound:
+            return "User not found."
+        case .saveFailed(let error):
+            return "Failed to save user: \(error.localizedDescription)"
+        case .fetchFailed(let error):
+            return "Failed to fetch user: \(error.localizedDescription)"
+        }
+    }
+}
+
+/// Service for managing app users in Firestore
+class UserService {
     // MARK: - Singleton
     
     static let shared = UserService()
     
     // MARK: - Properties
     
-    private let cloudKit = CloudKitManager.shared
+    private let db = Firestore.firestore()
+    private let authService = AuthService.shared
+    
+    private var usersCollection: CollectionReference {
+        db.collection(UsersCollection)
+    }
     
     // MARK: - Initialization
     
     private init() {}
     
-    // MARK: - iCloud Account
-    
-    /// Check if the user is signed into iCloud
-    func checkiCloudAvailability() async throws -> Bool {
-        let status = try await cloudKit.checkiCloudStatus()
-        
-        switch status {
-        case .available:
-            return true
-        case .noAccount:
-            throw CloudKitError.userNotAuthenticated
-        case .restricted, .couldNotDetermine, .temporarilyUnavailable:
-            throw CloudKitError.iCloudNotAvailable
-        @unknown default:
-            throw CloudKitError.iCloudNotAvailable
-        }
-    }
-    
-    /// Get the current user's iCloud identity string
-    func getCurrentiCloudUserID() async throws -> String {
-        let recordID = try await cloudKit.getCurrentUserRecordID()
-        return recordID.recordName
-    }
-    
     // MARK: - User CRUD
     
-    /// Create a new AppUser record
-    func createUser(displayName: String, avatarEmoji: String) async throws -> AppUser {
-        let icloudUserID = try await getCurrentiCloudUserID()
-        
+    /// Create a new user or update existing
+    func createUser(userId: String, displayName: String, avatarEmoji: String) async throws -> AppUser {
         // Check if user already exists
-        if let existingUser = try await fetchUserByiCloudID(icloudUserID) {
-            // Update existing user instead
+        if let existingUser = try await fetchUser(byId: userId) {
+            // Update existing user
             var updatedUser = existingUser
             updatedUser.displayName = displayName
             updatedUser.avatarEmoji = avatarEmoji
@@ -63,71 +60,59 @@ actor UserService {
         
         // Create new user
         let user = AppUser(
-            icloudUserRecordID: icloudUserID,
+            id: userId,
             displayName: displayName,
             avatarEmoji: avatarEmoji
         )
         
-        let record = user.toRecord()
-        _ = try await cloudKit.save(record: record)
-        
-        return user
+        do {
+            try await usersCollection.document(userId).setData(user.toFirestore())
+            return user
+        } catch {
+            throw UserServiceError.saveFailed(error)
+        }
     }
     
     /// Fetch the current logged-in user's AppUser record
     func fetchCurrentUser() async throws -> AppUser? {
-        let icloudUserID = try await getCurrentiCloudUserID()
-        return try await fetchUserByiCloudID(icloudUserID)
-    }
-    
-    /// Fetch a user by their iCloud record ID
-    func fetchUserByiCloudID(_ icloudUserID: String) async throws -> AppUser? {
-        let predicate = NSPredicate(
-            format: "%K == %@",
-            AppUser.FieldKey.icloudUserRecordID.rawValue,
-            icloudUserID
-        )
-        
-        let records = try await cloudKit.fetch(
-            recordType: AppUserRecordType,
-            predicate: predicate,
-            resultsLimit: 1
-        )
-        
-        guard let record = records.first else { return nil }
-        return AppUser(from: record)
-    }
-    
-    /// Fetch a user by their AppUser record ID
-    func fetchUser(byID userID: String) async throws -> AppUser? {
-        let recordID = CKRecord.ID(recordName: userID)
-        
-        do {
-            let record = try await cloudKit.fetch(recordID: recordID)
-            return AppUser(from: record)
-        } catch CloudKitError.recordNotFound {
+        guard let userId = authService.userId else {
             return nil
+        }
+        return try await fetchUser(byId: userId)
+    }
+    
+    /// Fetch a user by their ID
+    func fetchUser(byId userId: String) async throws -> AppUser? {
+        do {
+            let document = try await usersCollection.document(userId).getDocument()
+            
+            guard document.exists else { return nil }
+            
+            return AppUser(from: document)
+        } catch {
+            throw UserServiceError.fetchFailed(error)
         }
     }
     
     /// Fetch multiple users by their IDs
-    func fetchUsers(byIDs userIDs: [String]) async throws -> [AppUser] {
-        guard !userIDs.isEmpty else { return [] }
+    func fetchUsers(byIds userIds: [String]) async throws -> [AppUser] {
+        guard !userIds.isEmpty else { return [] }
         
         var users: [AppUser] = []
         
-        // Fetch users in parallel
-        await withTaskGroup(of: AppUser?.self) { group in
-            for userID in userIDs {
-                group.addTask {
-                    try? await self.fetchUser(byID: userID)
-                }
-            }
-            
-            for await user in group {
-                if let user = user {
-                    users.append(user)
-                }
+        // Firestore 'in' query supports up to 10 items, so we batch
+        let batches = userIds.chunked(into: 10)
+        
+        for batch in batches {
+            do {
+                let snapshot = try await usersCollection
+                    .whereField(FieldPath.documentID(), in: batch)
+                    .getDocuments()
+                
+                let batchUsers = snapshot.documents.compactMap { AppUser(from: $0) }
+                users.append(contentsOf: batchUsers)
+            } catch {
+                throw UserServiceError.fetchFailed(error)
             }
         }
         
@@ -136,11 +121,21 @@ actor UserService {
     
     /// Update an existing user
     func updateUser(_ user: AppUser) async throws -> AppUser {
-        let recordID = CKRecord.ID(recordName: user.id)
-        let existingRecord = try await cloudKit.fetch(recordID: recordID)
-        let updatedRecord = user.updateRecord(existingRecord)
-        _ = try await cloudKit.save(record: updatedRecord)
-        return user
+        do {
+            try await usersCollection.document(user.id).setData(user.toFirestore(), merge: true)
+            return user
+        } catch {
+            throw UserServiceError.saveFailed(error)
+        }
     }
 }
 
+// MARK: - Array Extension for Chunking
+
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
+    }
+}

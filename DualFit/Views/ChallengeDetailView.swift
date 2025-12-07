@@ -14,10 +14,10 @@ struct ChallengeDetailView: View {
     
     init(challenge: Challenge) {
         // We need to initialize with a placeholder that will be replaced
-        let userID = "" // Will be set properly in task
+        let userId = "" // Will be set properly in task
         _viewModel = StateObject(wrappedValue: ChallengeDetailViewModel(
             challenge: challenge,
-            currentUserID: userID
+            currentUserId: userId
         ))
     }
     
@@ -58,24 +58,24 @@ struct ChallengeDetailView: View {
         }
         .task {
             // Set the correct user ID
-            if let userID = appViewModel.currentUser?.id {
+            if let userId = appViewModel.currentUser?.id {
                 // Reinitialize view model with proper user ID
                 await MainActor.run {
                     viewModel.todayViewModel = TodayViewModel(
-                        challengeID: viewModel.challenge.id,
-                        currentUserID: userID
+                        challengeId: viewModel.challenge.id,
+                        currentUserId: userId
                     )
                     viewModel.reviewViewModel = ReviewViewModel(
-                        challengeID: viewModel.challenge.id,
-                        currentUserID: userID
+                        challengeId: viewModel.challenge.id,
+                        currentUserId: userId
                     )
                     viewModel.calendarViewModel = CalendarViewModel(
-                        challengeID: viewModel.challenge.id,
-                        currentUserID: userID
+                        challengeId: viewModel.challenge.id,
+                        currentUserId: userId
                     )
                     viewModel.leaderboardViewModel = LeaderboardViewModel(
-                        challengeID: viewModel.challenge.id,
-                        currentUserID: userID
+                        challengeId: viewModel.challenge.id,
+                        currentUserId: userId
                     )
                 }
                 await viewModel.loadData()

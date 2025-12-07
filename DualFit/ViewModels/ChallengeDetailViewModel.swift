@@ -50,19 +50,19 @@ class ChallengeDetailViewModel: ObservableObject {
     private let challengeService = ChallengeService.shared
     private let submissionService = SubmissionService.shared
     
-    let currentUserID: String
+    let currentUserId: String
     
     // MARK: - Initialization
     
-    init(challenge: Challenge, currentUserID: String) {
+    init(challenge: Challenge, currentUserId: String) {
         self.challenge = challenge
-        self.currentUserID = currentUserID
+        self.currentUserId = currentUserId
         
         // Initialize child view models
-        self.todayViewModel = TodayViewModel(challengeID: challenge.id, currentUserID: currentUserID)
-        self.reviewViewModel = ReviewViewModel(challengeID: challenge.id, currentUserID: currentUserID)
-        self.calendarViewModel = CalendarViewModel(challengeID: challenge.id, currentUserID: currentUserID)
-        self.leaderboardViewModel = LeaderboardViewModel(challengeID: challenge.id, currentUserID: currentUserID)
+        self.todayViewModel = TodayViewModel(challengeId: challenge.id, currentUserId: currentUserId)
+        self.reviewViewModel = ReviewViewModel(challengeId: challenge.id, currentUserId: currentUserId)
+        self.calendarViewModel = CalendarViewModel(challengeId: challenge.id, currentUserId: currentUserId)
+        self.leaderboardViewModel = LeaderboardViewModel(challengeId: challenge.id, currentUserId: currentUserId)
     }
     
     // MARK: - Public Methods
@@ -74,10 +74,10 @@ class ChallengeDetailViewModel: ObservableObject {
         
         do {
             // Load exercises
-            exercises = try await challengeService.fetchExercises(forChallengeID: challenge.id)
+            exercises = try await challengeService.fetchExercises(forChallengeId: challenge.id)
             
             // Load participants
-            participants = try await challengeService.fetchParticipantUsers(forChallengeID: challenge.id)
+            participants = try await challengeService.fetchParticipantUsers(forChallengeId: challenge.id)
             
             // Update child view models with shared data
             await todayViewModel.setExercises(exercises)
@@ -126,8 +126,8 @@ class ChallengeDetailViewModel: ObservableObject {
     func updatePendingReviewCount() async {
         do {
             let pending = try await submissionService.fetchPendingSubmissionsToReview(
-                challengeID: challenge.id,
-                currentUserID: currentUserID
+                challengeId: challenge.id,
+                currentUserId: currentUserId
             )
             pendingReviewCount = pending.count
         } catch {
@@ -140,4 +140,3 @@ class ChallengeDetailViewModel: ObservableObject {
         errorMessage = nil
     }
 }
-

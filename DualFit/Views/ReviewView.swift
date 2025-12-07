@@ -173,7 +173,7 @@ struct VideoReviewSheet: View {
                 
                 VStack(spacing: 0) {
                     // Video player
-                    if let videoURL = item.submission.videoAssetURL {
+                    if let videoURL = item.submission.videoURL {
                         VideoPlayer(player: AVPlayer(url: videoURL))
                             .aspectRatio(9/16, contentMode: .fit)
                     } else {
@@ -278,6 +278,5 @@ struct VideoReviewSheet: View {
 // MARK: - Preview
 
 #Preview {
-    ReviewView(viewModel: ReviewViewModel(challengeID: "test", currentUserID: "user"))
+    ReviewView(viewModel: ReviewViewModel(challengeId: "test", currentUserId: "user"))
 }
-
