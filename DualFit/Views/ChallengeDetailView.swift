@@ -32,8 +32,11 @@ struct ChallengeDetailView: View {
                 
                 // Tab content
                 TabView(selection: $viewModel.selectedTab) {
-                    TodayView(viewModel: viewModel.todayViewModel)
-                        .tag(ChallengeTab.today)
+                    // Only include TodayView if challenge hasn't ended
+                    if !viewModel.challenge.hasEnded {
+                        TodayView(viewModel: viewModel.todayViewModel)
+                            .tag(ChallengeTab.today)
+                    }
                     
                     ReviewView(viewModel: viewModel.reviewViewModel)
                         .tag(ChallengeTab.review)
@@ -43,6 +46,10 @@ struct ChallengeDetailView: View {
                     
                     LeaderboardView(viewModel: viewModel.leaderboardViewModel)
                         .tag(ChallengeTab.leaderboard)
+                    
+                    // Always include settings view, but tab bar will only show it for creators
+                    SettingsView(viewModel: viewModel.settingsViewModel)
+                        .tag(ChallengeTab.settings)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
@@ -59,8 +66,11 @@ struct ChallengeDetailView: View {
         .task {
             // Set the correct user ID
             if let userID = appViewModel.currentUser?.id {
-                // Reinitialize view model with proper user ID
+                // Update current user ID in view model
                 await MainActor.run {
+                    viewModel.currentUserId = userID
+                    
+                    // Reinitialize view model with proper user ID
                     viewModel.todayViewModel = TodayViewModel(
                         challengeId: viewModel.challenge.id,
                         currentUserId: userID
@@ -77,6 +87,7 @@ struct ChallengeDetailView: View {
                         challengeId: viewModel.challenge.id,
                         currentUserId: userID
                     )
+                    viewModel.settingsViewModel = SettingsViewModel(challenge: viewModel.challenge)
                 }
                 await viewModel.loadData()
             }
@@ -99,7 +110,7 @@ struct ChallengeDetailView: View {
     
     private var tabBar: some View {
         HStack(spacing: 0) {
-            ForEach(ChallengeTab.allCases, id: \.self) { tab in
+            ForEach(viewModel.visibleTabs, id: \.self) { tab in
                 tabButton(for: tab)
             }
         }

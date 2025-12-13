@@ -14,6 +14,11 @@ struct LeaderboardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                // Challenge ended banner
+                if viewModel.challengeHasEnded {
+                    endedChallengeBanner
+                }
+                
                 // Winner banner
                 if viewModel.hasWinner {
                     winnerBanner
@@ -29,6 +34,35 @@ struct LeaderboardView: View {
             }
             .padding()
         }
+    }
+    
+    // MARK: - Ended Challenge Banner
+    
+    private var endedChallengeBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 24))
+                .foregroundColor(.gray)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Challenge Ended")
+                    .font(.custom("Avenir-Heavy", size: 16))
+                    .foregroundColor(.primary)
+                
+                Text("This challenge has ended. View final results below.")
+                    .font(.custom("Avenir-Medium", size: 13))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
     }
     
     // MARK: - Winner Banner

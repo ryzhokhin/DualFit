@@ -273,4 +273,98 @@ class ChallengeService {
         let participants = try await fetchParticipants(forChallengeId: challengeId)
         return participants.contains { $0.userId == userId }
     }
+    
+    // MARK: - Update Operations
+    
+    /// Update challenge dates
+    func updateChallengeDates(
+        challengeId: String,
+        startDate: Date,
+        endDate: Date
+    ) async throws {
+        let challengeRef = challengesCollection.document(challengeId)
+        
+        do {
+            try await challengeRef.updateData([
+                "startDate": Timestamp(date: startDate),
+                "endDate": Timestamp(date: endDate)
+            ])
+        } catch {
+            throw ChallengeError.saveFailed(error)
+        }
+    }
+    
+    /// Update a single exercise
+    func updateExercise(_ exercise: ChallengeExercise) async throws {
+        let exerciseRef = challengesCollection
+            .document(exercise.challengeId)
+            .collection(ExercisesSubcollection)
+            .document(exercise.id)
+        
+        do {
+            try await exerciseRef.setData(exercise.toFirestore())
+        } catch {
+            throw ChallengeError.saveFailed(error)
+        }
+    }
+    
+    /// Update multiple exercises (for reordering or bulk updates)
+    func updateExercises(_ exercises: [ChallengeExercise]) async throws {
+        let batch = db.batch()
+        
+        for exercise in exercises {
+            let exerciseRef = challengesCollection
+                .document(exercise.challengeId)
+                .collection(ExercisesSubcollection)
+                .document(exercise.id)
+            batch.setData(exercise.toFirestore(), forDocument: exerciseRef)
+        }
+        
+        do {
+            try await batch.commit()
+        } catch {
+            throw ChallengeError.saveFailed(error)
+        }
+    }
+    
+    /// Delete an exercise
+    func deleteExercise(challengeId: String, exerciseId: String) async throws {
+        let exerciseRef = challengesCollection
+            .document(challengeId)
+            .collection(ExercisesSubcollection)
+            .document(exerciseId)
+        
+        do {
+            try await exerciseRef.delete()
+        } catch {
+            throw ChallengeError.saveFailed(error)
+        }
+    }
+    
+    /// Add a new exercise to a challenge
+    func addExercise(
+        challengeId: String,
+        name: String,
+        dailyRequiredReps: Int,
+        order: Int
+    ) async throws -> ChallengeExercise {
+        let exercise = ChallengeExercise(
+            challengeId: challengeId,
+            name: name,
+            dailyRequiredReps: dailyRequiredReps,
+            order: order
+        )
+        
+        let exerciseRef = challengesCollection
+            .document(challengeId)
+            .collection(ExercisesSubcollection)
+            .document(exercise.id)
+        
+        do {
+            try await exerciseRef.setData(exercise.toFirestore())
+            return exercise
+        } catch {
+            throw ChallengeError.saveFailed(error)
+        }
+    }
 }

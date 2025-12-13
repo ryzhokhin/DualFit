@@ -263,21 +263,34 @@ struct ChallengeCard: View {
                 
                 Spacer()
                 
-                // Progress ring
-                ZStack {
-                    Circle()
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 4)
-                    
-                    Circle()
-                        .trim(from: 0, to: summary.completionPercentage / 100)
-                        .stroke(Color("AccentColor"), style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                    
-                    Text("\(Int(summary.completionPercentage))%")
-                        .font(.custom("Avenir-Heavy", size: 12))
-                        .foregroundColor(.primary)
+                // Progress ring or place badge
+                if summary.challenge.hasEnded && summary.isTopThree {
+                    // Show place badge for ended challenges with top 3 ranks
+                    VStack(spacing: 2) {
+                        Text(summary.placeBadge)
+                            .font(.system(size: 32))
+                        Text("#\(summary.userRank ?? 0)")
+                            .font(.custom("Avenir-Heavy", size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(width: 50, height: 50)
+                } else {
+                    // Show progress circle for active challenges or non-top-3 ended challenges
+                    ZStack {
+                        Circle()
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 4)
+                        
+                        Circle()
+                            .trim(from: 0, to: summary.completionPercentage / 100)
+                            .stroke(Color("AccentColor"), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                        
+                        Text("\(Int(summary.completionPercentage))%")
+                            .font(.custom("Avenir-Heavy", size: 12))
+                            .foregroundColor(.primary)
+                    }
+                    .frame(width: 50, height: 50)
                 }
-                .frame(width: 50, height: 50)
             }
         }
         .padding(16)

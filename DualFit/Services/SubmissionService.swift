@@ -134,13 +134,40 @@ class SubmissionService {
         }
     }
     
-    /// Delete a video from Firebase Storage
+    /// Delete a video from Firebase Storage using download URL
     func deleteVideo(videoUrl: String) async throws {
         guard !videoUrl.isEmpty else { return }
         
         do {
             // Create reference from URL
             let storageRef = storage.reference(forURL: videoUrl)
+            try await storageRef.delete()
+        } catch {
+            // Ignore "object not found" errors
+            let nsError = error as NSError
+            if nsError.domain == StorageErrorDomain && nsError.code == StorageErrorCode.objectNotFound.rawValue {
+                return
+            }
+            throw SubmissionError.deleteFailed(error)
+        }
+    }
+    
+    /// Delete a video from Firebase Storage using storage path
+    func deleteVideoByPath(
+        challengeId: String,
+        userId: String,
+        date: Date,
+        exerciseId: String
+    ) async throws {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let dateString = dateFormatter.string(from: date)
+        
+        // Create storage path: videos/{challengeId}/{userId}/{date}/{exerciseId}.mp4
+        let storagePath = "videos/\(challengeId)/\(userId)/\(dateString)/\(exerciseId).mp4"
+        let storageRef = storage.reference().child(storagePath)
+        
+        do {
             try await storageRef.delete()
         } catch {
             // Ignore "object not found" errors
@@ -162,6 +189,18 @@ class SubmissionService {
         date: Date,
         videoFileURL: URL
     ) async throws -> ExerciseSubmission {
+        // Prevent submissions for past dates
+        let normalizedDate = Calendar.current.startOfDay(for: date)
+        let today = Calendar.current.startOfDay(for: Date())
+        
+        if normalizedDate < today {
+            throw SubmissionError.saveFailed(NSError(domain: "Submission", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot submit videos for past dates. You can only submit for today."]))
+        }
+        
+        if normalizedDate > today {
+            throw SubmissionError.saveFailed(NSError(domain: "Submission", code: 2, userInfo: [NSLocalizedDescriptionKey: "Cannot submit videos for future dates. You can only submit for today."]))
+        }
+        
         // Check if submission already exists for this exercise/date
         let existing = try await fetchSubmission(
             challengeId: challengeId,
@@ -338,8 +377,25 @@ class SubmissionService {
             }
             
             // Delete the video from storage
-            if let videoUrl = submission.videoUrl, !videoUrl.isEmpty {
-                try? await deleteVideo(videoUrl: videoUrl)
+            // Try deleting by path first (more reliable), then fallback to URL
+            do {
+                try await deleteVideoByPath(
+                    challengeId: submission.challengeId,
+                    userId: submission.userId,
+                    date: submission.date,
+                    exerciseId: submission.exerciseId
+                )
+            } catch {
+                // If path-based deletion fails, try URL-based deletion
+                if let videoUrl = submission.videoUrl, !videoUrl.isEmpty {
+                    do {
+                        try await deleteVideo(videoUrl: videoUrl)
+                    } catch {
+                        // Log error but don't fail the review if video deletion fails
+                        // The video will remain in storage but submission will be marked as reviewed
+                        print("Warning: Failed to delete video for submission \(submission.id): \(error.localizedDescription)")
+                    }
+                }
             }
             
             // Update submission

@@ -48,39 +48,58 @@ struct TodayView: View {
     // MARK: - Date Header
     
     private var dateHeader: some View {
-        HStack {
-            Button {
-                Task {
-                    await viewModel.previousDay()
+        VStack(spacing: 12) {
+            HStack {
+                Button {
+                    Task {
+                        await viewModel.previousDay()
+                    }
+                } label: {
+                    Image(systemName: "chevron.left.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(Color("AccentColor"))
                 }
-            } label: {
-                Image(systemName: "chevron.left.circle.fill")
-                    .font(.system(size: 28))
-                    .foregroundColor(Color("AccentColor"))
-            }
-            
-            Spacer()
-            
-            VStack(spacing: 4) {
-                Text(viewModel.selectedDate.isToday ? "Today" : viewModel.selectedDate.relativeDateString)
-                    .font(.custom("Avenir-Heavy", size: 20))
-                    .foregroundColor(.primary)
                 
-                Text(viewModel.selectedDate.fullDateString)
-                    .font(.custom("Avenir-Medium", size: 13))
-                    .foregroundColor(.secondary)
+                Spacer()
+                
+                VStack(spacing: 4) {
+                    Text(viewModel.selectedDate.isToday ? "Today" : viewModel.selectedDate.relativeDateString)
+                        .font(.custom("Avenir-Heavy", size: 20))
+                        .foregroundColor(.primary)
+                    
+                    Text(viewModel.selectedDate.fullDateString)
+                        .font(.custom("Avenir-Medium", size: 13))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Button {
+                    Task {
+                        await viewModel.nextDay()
+                    }
+                } label: {
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(viewModel.isSelectedDateInFuture ? Color.gray : Color("AccentColor"))
+                }
+                .disabled(viewModel.isSelectedDateInFuture)
             }
             
-            Spacer()
-            
-            Button {
-                Task {
-                    await viewModel.nextDay()
+            // Show message for past dates
+            if viewModel.isSelectedDateInPast {
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(.orange)
+                    Text("Viewing past date - submissions are read-only")
+                        .font(.custom("Avenir-Medium", size: 12))
+                        .foregroundColor(.orange)
                 }
-            } label: {
-                Image(systemName: "chevron.right.circle.fill")
-                    .font(.system(size: 28))
-                    .foregroundColor(Color("AccentColor"))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.orange.opacity(0.15))
+                .cornerRadius(8)
             }
         }
         .padding()
@@ -225,7 +244,16 @@ struct ExerciseRow: View {
             // Action button
             if item.canSubmit {
                 PhotosPicker(
-                    selection: $viewModel.selectedVideoItem,
+                    selection: Binding(
+                        get: { viewModel.selectedVideoItem },
+                        set: { newValue in
+                            // When video is selected, set the exercise FIRST
+                            if newValue != nil {
+                                viewModel.prepareUpload(for: item.exercise)
+                            }
+                            viewModel.selectedVideoItem = newValue
+                        }
+                    ),
                     matching: .videos,
                     photoLibrary: .shared()
                 ) {
@@ -240,11 +268,18 @@ struct ExerciseRow: View {
                     .background(Color("AccentColor"))
                     .cornerRadius(10)
                 }
-                .onChange(of: viewModel.selectedVideoItem) { _, newValue in
-                    if newValue != nil {
-                        viewModel.prepareUpload(for: item.exercise)
-                    }
+            } else if viewModel.isSelectedDateInPast {
+                // Show read-only indicator for past dates
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.fill")
+                    Text("Read Only")
                 }
+                .font(.custom("Avenir-Medium", size: 14))
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.secondary.opacity(0.1))
+                .cornerRadius(10)
             }
         }
         .padding()

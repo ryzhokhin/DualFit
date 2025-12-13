@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D0000034 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000136 /* SettingsViewModel.swift */; };
 		BF7F74432EDECF7800B6872D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BF7F74422EDECF7800B6872D /* GoogleService-Info.plist */; };
 		BF7F74462EDECFFB00B6872D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = BF7F74452EDECFFB00B6872D /* FirebaseAuth */; };
 		BF7F74482EDECFFB00B6872D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = BF7F74472EDECFFB00B6872D /* FirebaseFirestore */; };
@@ -43,9 +44,11 @@
 		D0000030 /* LeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000130 /* LeaderboardView.swift */; };
 		D0000031 /* VideoCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000131 /* VideoCompressor.swift */; };
 		D0000032 /* DateExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000132 /* DateExtensions.swift */; };
+		D0000033 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0000135 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D0000136 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		BF7F74422EDECF7800B6872D /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D0000100 /* DualFit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DualFit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0000101 /* DualFitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DualFitApp.swift; sourceTree = "<group>"; };
@@ -80,6 +83,7 @@
 		D0000130 /* LeaderboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardView.swift; sourceTree = "<group>"; };
 		D0000131 /* VideoCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCompressor.swift; sourceTree = "<group>"; };
 		D0000132 /* DateExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateExtensions.swift; sourceTree = "<group>"; };
+		D0000135 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D0000133 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D0000134 /* DualFit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DualFit.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -166,6 +170,7 @@
 				D0000118 /* ReviewViewModel.swift */,
 				D0000119 /* CalendarViewModel.swift */,
 				D0000120 /* LeaderboardViewModel.swift */,
+				D0000136 /* SettingsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -183,6 +188,7 @@
 				D0000128 /* ReviewView.swift */,
 				D0000129 /* CalendarView.swift */,
 				D0000130 /* LeaderboardView.swift */,
+				D0000135 /* SettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -272,6 +278,7 @@
 				D0000001 /* DualFitApp.swift in Sources */,
 				D0000003 /* AppUser.swift in Sources */,
 				D0000004 /* Challenge.swift in Sources */,
+				D0000034 /* SettingsViewModel.swift in Sources */,
 				D0000005 /* ChallengeExercise.swift in Sources */,
 				D0000006 /* ChallengeParticipant.swift in Sources */,
 				D0000007 /* ExerciseSubmission.swift in Sources */,
@@ -298,6 +305,7 @@
 				D0000028 /* ReviewView.swift in Sources */,
 				D0000029 /* CalendarView.swift in Sources */,
 				D0000030 /* LeaderboardView.swift in Sources */,
+				D0000033 /* SettingsView.swift in Sources */,
 				D0000031 /* VideoCompressor.swift in Sources */,
 				D0000032 /* DateExtensions.swift in Sources */,
 			);
@@ -430,6 +438,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = DualFit/DualFit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -464,6 +473,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = DualFit/DualFit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

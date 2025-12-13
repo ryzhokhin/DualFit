@@ -22,6 +22,7 @@ class LeaderboardViewModel: ObservableObject {
     private let challengeId: String
     private let currentUserId: String
     private var participants: [AppUser] = []
+    private var challenge: Challenge?
     
     private let submissionService = SubmissionService.shared
     
@@ -49,6 +50,11 @@ class LeaderboardViewModel: ObservableObject {
         return entries[0].totalPoints == entries[1].totalPoints && entries[0].totalPoints > 0
     }
     
+    /// Whether the challenge has ended
+    var challengeHasEnded: Bool {
+        challenge?.hasEnded ?? false
+    }
+    
     // MARK: - Initialization
     
     init(challengeId: String, currentUserId: String) {
@@ -61,6 +67,11 @@ class LeaderboardViewModel: ObservableObject {
     /// Set participants (called from parent view model)
     func setParticipants(_ participants: [AppUser]) {
         self.participants = participants
+    }
+    
+    /// Set challenge (called from parent view model)
+    func setChallenge(_ challenge: Challenge) {
+        self.challenge = challenge
     }
     
     /// Load leaderboard data
